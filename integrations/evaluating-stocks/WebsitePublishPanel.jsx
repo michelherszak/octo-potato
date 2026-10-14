@@ -9,8 +9,8 @@ export default function WebsitePublishPanel({runId}) {
   const [sourceText,setSourceText]=useState('')
   useEffect(()=>{let active=true;api.websiteDraft(runId).then(d=>{if(active){setData(d);setForm(d.editorial)}}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[runId])
   function change(key,value){setForm(f=>({...f,[key]:value}));setApproved(false);setPreview(null);setResult(null);setRequestId(crypto.randomUUID())}
-  async function inspect(){setBusy(true);setError('');try{const d=await api.websitePreview(runId,form);setPreview(d.article);setRevision(d.revision);if(!d.connected)setError('Vorschau bereit; die Website-Verbindung konnte noch nicht bestätigt werden.')}catch(e){setError(e.message)}finally{setBusy(false)}}
-  async function push(){setBusy(true);setError('');try{const d=await api.websitePush(runId,{publication_id:requestId,editorial:form,approved,expected_revision:revision});setResult(d);setRevision(d.revision);setApproved(false);setRequestId(crypto.randomUUID())}catch(e){setError(e.message)}finally{setBusy(false)}}
+  async function inspect(){setBusy(true);setError('');setApproved(false);try{const d=await api.websitePreview(runId,form);setPreview(d.article);setRevision(d.revision);setData(previous=>({...previous,connection:d.connection}));if(!d.connected)setError('Vorschau bereit; die Website-Verbindung konnte noch nicht bestätigt werden.')}catch(e){setError(e.message)}finally{setBusy(false)}}
+  async function push(){setBusy(true);setError('');try{const d=await api.websitePush(runId,{publication_id:requestId,editorial:form,approved,expected_revision:revision,target_url:data.connection.url});setResult(d);setRevision(d.revision);setApproved(false);setRequestId(crypto.randomUUID())}catch(e){setError(e.message)}finally{setBusy(false)}}
   return <details className="lifecycle-card website-publish"><summary>Auf TechThese veröffentlichen · Analyse & Memo</summary>
     <p>Ergänze deine Analyse, prüfe den lesbaren Memo-Text und ordne den Beitrag den passenden Themen zu.</p>
     {error&&<div className="error" role="alert">{error}</div>}

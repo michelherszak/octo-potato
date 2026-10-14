@@ -84,6 +84,7 @@ class PushIn(BaseModel):
     editorial: EditorialIn
     approved: bool = False
     expected_revision: int = Field(default=0,ge=0)
+    target_url: str = Field(default='',max_length=2000)
 
 def _settings():
     return read_json(SETTINGS,{})
@@ -218,7 +219,7 @@ def preview(run_id:str,editorial:EditorialIn):
             connected=True
         except (httpx.HTTPError,ValueError,KeyError):
             pass
-    return {'article':export_article(run,editorial),'eligible':eligible(run),'revision':revision,'connected':connected}
+    return {'article':export_article(run,editorial),'eligible':eligible(run),'revision':revision,'connected':connected,'connection':status()}
 
 @router.post('/runs/{run_id}/push')
 def push(run_id:str,body:PushIn):
@@ -228,6 +229,7 @@ def push(run_id:str,body:PushIn):
     settings=_settings()
     try:url=_target(settings)
     except ValueError as exc:raise HTTPException(400,str(exc)) from exc
+    if body.target_url.rstrip('/') != url:raise HTTPException(409,'Website-Ziel hat sich geändert. Bitte den Entwurf erneut prüfen und freigeben.')
     if not settings.get('token'):raise HTTPException(400,'Veröffentlichungsschlüssel fehlt')
     article=export_article(run,body.editorial)
     fingerprint=hashlib.sha256(json.dumps(article,sort_keys=True).encode()).hexdigest()
