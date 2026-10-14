@@ -3,14 +3,17 @@
 import {useId,useMemo,useState} from 'react';
 import {discoveryQuestions,searchSuggestions,type SearchEntry} from '@/lib/search';
 
-type Props={entries:SearchEntry[];initialQuery?:string;topic?:string;action?:string;companiesOnly?:boolean};
-export default function SearchExplorer({entries,initialQuery='',topic='',action='/',companiesOnly=false}:Props) {
+type Props={entries:SearchEntry[];initialQuery?:string;topic?:string;action?:string;companiesOnly?:boolean;compact?:boolean};
+export default function SearchExplorer({entries,initialQuery='',topic='',action='/',companiesOnly=false,compact=false}:Props) {
   const id=useId(),listId=id+'-suggestions';
   const [query,setQuery]=useState(initialQuery),[open,setOpen]=useState(false),[active,setActive]=useState(-1),[more,setMore]=useState(false);
   const suggestions=useMemo(()=>searchSuggestions(query,entries),[query,entries]);
   const visible=open&&query.trim().length>0;
   const questions=more?discoveryQuestions:discoveryQuestions.slice(0,4);
-  return <div className="search-explorer">
+  const guide=<><div className="discovery-heading"><h2>Noch keine konkrete Idee?</h2><span>Starte mit einer Frage</span></div>
+    <div className="discovery-grid">{questions.map(item=><a key={item.topic} href={'/?thema='+item.topic+'#ergebnisse'}><strong>{item.question}</strong><span>{item.hint}</span><i aria-hidden="true">↗</i></a>)}</div>
+    <button className="discovery-toggle" type="button" aria-expanded={more} onClick={()=>setMore(previous=>!previous)}>{more?'Weniger Einstiege anzeigen':'Weitere Themen entdecken'} <span aria-hidden="true">{more?'−':'+'}</span></button></>;
+  return <div className={'search-explorer'+(compact?' search-compact':'')}>
     <label className="search-label" htmlFor={id}>{companiesOnly?'Ein Unternehmen oder ein Thema entdecken':'Was möchtest du besser verstehen?'}</label>
     <div className="search-control" onBlur={event=>{if(!event.currentTarget.contains(event.relatedTarget)){setOpen(false);setActive(-1);}}}>
       <form action={action} method="get" role="search">
@@ -34,9 +37,7 @@ export default function SearchExplorer({entries,initialQuery='',topic='',action=
       </div>}
     </div>
     <p className="search-help" id={id+'-help'}>Ein Alltagsbegriff reicht. Wir schlagen dir {companiesOnly?'passende Themen und Unternehmen':'passende Themen, Unternehmen und vorhandene Beiträge'} vor.</p>
-    <div className="discovery-heading"><h2>Noch keine konkrete Idee?</h2><span>Starte mit einer Frage</span></div>
-    <div className="discovery-grid">{questions.map(item=><a key={item.topic} href={'/?thema='+item.topic+'#ergebnisse'}><strong>{item.question}</strong><span>{item.hint}</span><i aria-hidden="true">↗</i></a>)}</div>
-    <button className="discovery-toggle" type="button" aria-expanded={more} onClick={()=>setMore(previous=>!previous)}>{more?'Weniger Einstiege anzeigen':'Weitere Themen entdecken'} <span aria-hidden="true">{more?'−':'+'}</span></button>
+    {compact?<details className="search-question-guide"><summary>Mit einer Frage starten</summary><div>{guide}</div></details>:guide}
     <span className="sr-only" role="status" aria-live="polite">{visible?(suggestions.length?suggestions.length+' Suchvorschläge verfügbar.':'Keine passenden Suchvorschläge.') : ''}</span>
   </div>;
 }

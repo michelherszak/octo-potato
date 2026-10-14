@@ -82,3 +82,9 @@ Die Tests prüfen Cluster, den strikten Publikationsvertrag, Quellenadressen, wi
 ### Suche mit Einstiegen
 
 Die Startseite und Unternehmensübersicht bieten acht verständliche Einstiegsfragen, Vorschläge beim Tippen und eine Suche nach Alltagsbegriffen (z. B. Strom, Chips, Medizin), englischen Themenbegriffen und kleineren Schreibfehlern. Die Vorschläge verlinken vorhandene Themen, Unternehmen und Beiträge. Sie entstehen aus dem aktuellen Veröffentlichungskatalog, ohne externe KI-Anfragen oder Speicherung von Suchverläufen. Neu veröffentlichte Unternehmen und Artikel werden beim nächsten Seitenaufruf automatisch aufgenommen. Pfeiltasten wählen einen Vorschlag, Enter öffnet ihn und Escape schließt die Liste. Der Suchknopf führt immer die eingegebene Suche aus.
+
+### Themen zuerst
+
+Die Startseite ordnet Analysen, Memos und Unternehmen unter den acht Technologiethemen ein. Jeder Themenbereich zeigt die vorhandenen Inhalte und einen kompakten Beitragseinstieg. Themen ohne Artikel bleiben als Recherchebereich sichtbar. Die Suche mit Vorschlägen und Einstiegsfragen ist als ergänzender Bereich erreichbar. Auch Themenunterseiten nutzen kompakte Beitragslisten; das Erscheinungsbild und die Artikelseiten bleiben erhalten.
+
+Die Startseite und Unternehmensübersicht verzichten auf große Einleitungssektionen. Themen, Suche und Rechercheauswahl stehen direkt im Arbeitsbereich.

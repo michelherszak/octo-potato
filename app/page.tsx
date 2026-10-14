@@ -1,7 +1,54 @@
 import {allArticles,companyCatalog} from '@/lib/content';
 import {topics} from '@/lib/catalog';
-import {ArticleCard,TopicLink,Tags} from './components';
+import {ArticleRow,Icon} from './components';
 import SearchExplorer from './SearchExplorer';
-import {buildSearchEntries,matchesArticle,matchesCompany} from '@/lib/search';
+import {buildSearchEntries,matchesArticle,matchesCompany,matchingTopics} from '@/lib/search';
+
 export const dynamic='force-dynamic';
-export default async function Home({searchParams}:{searchParams:Promise<{q?:string;thema?:string}>}) {const {q='',thema=''}=await searchParams;const all=await allArticles();const catalog=await companyCatalog();const filtered=all.filter(a=>(!thema||a.topics.includes(thema))&&matchesArticle(q,a));const matchingCompanies=(q||thema)?catalog.filter(c=>(!thema||c.topics.includes(thema))&&matchesCompany(q,c)):[];const entries=buildSearchEntries(catalog,all);const [first,...rest]=filtered;return <main id="inhalt" className="container"><div className="edition"><span><i/> Technik, Unternehmen & Perspektiven</span><span>Das Wissensmagazin</span></div><section className="hero"><div><p className="eyebrow">Wissen, das Zusammenhänge schafft</p><h1>Die Technologie dahinter.<br/><em>Die These dazu.</em></h1><p className="hero-lead">Analysen und Memos für alle, die verstehen wollen, wie Technologie Unternehmen verändert. Klar erklärt. Mit Zahlen und Quellen.</p></div><div className="hero-note"><span className="note-index">01 — 08</span><p>Von Quantencomputern<br/>bis Medizintechnik.</p><a href="/themen">Alle Themen entdecken ↗</a></div></section><section id="suche" className="browse" aria-label="Beiträge filtern"><SearchExplorer entries={entries} initialQuery={q} topic={thema}/><div className="filter-row"><a aria-current={!thema?'page':undefined} href={'/?q='+encodeURIComponent(q)}>Alle Themen</a>{topics.map(t=><a aria-current={thema===t.id?'page':undefined} key={t.id} href={'/?thema='+t.id+'&q='+encodeURIComponent(q)}>{t.short}</a>)}</div></section><div id="ergebnisse" className="section-title"><h2>{q?'Suchergebnisse':'Neue Perspektiven'}</h2><span>{filtered.length} Beiträge</span></div>{first?<><ArticleCard article={first} featured/><div className="article-grid">{rest.map(a=><ArticleCard key={a.slug} article={a}/>)}</div></>:<div className="search-empty"><h2>Für diese Auswahl gibt es noch keinen Beitrag.</h2><p>{q?'Versuche einen allgemeineren Begriff oder wähle eine der Einstiegsfragen. Passende Unternehmen findest du gegebenenfalls weiter unten.':'Entdecke weiter unten die Unternehmen dieses Themenbereichs. Eine Einzelanalyse ist hier noch nicht veröffentlicht.'}</p><a href={thema?'/themen/'+thema:'/unternehmen'}>Recherche entdecken ↗</a></div>}{matchingCompanies.length>0&&<section className="search-company-results" aria-label="Passende Unternehmen"><div className="section-title"><h2>Unternehmen entdecken</h2><span>{matchingCompanies.length} passende Unternehmen</span></div><div className="company-list">{matchingCompanies.slice(0,6).map(c=><article key={c.ticker}><a className="ticker" href={'/unternehmen/'+c.ticker}>{c.ticker}</a><div><h3><a href={'/unternehmen/'+c.ticker}>{c.name}</a></h3><p>{c.role}</p></div><Tags ids={c.topics}/></article>)}</div>{matchingCompanies.length>6&&<a className="read-link" href={thema?'/themen/'+thema:'/unternehmen?q='+encodeURIComponent(q)}>Alle passenden Unternehmen ansehen ↗</a>}</section>}<section className="knowledge-strip"><div><p className="eyebrow">Der Hintergrund jeder These</p><h2>Ein Thema endet selten<br/>an seiner eigenen Grenze.</h2><p>Rechenzentren brauchen Chips und Energie. Quanten-Technologie braucht Sicherheit. Unsere Themen verbinden das Wissen dahinter.</p><a className="read-link" href="/unternehmen">Unternehmen und Verbindungen entdecken ↗</a></div><div className="knowledge-stats"><strong>{catalog.length}<span>recherchierte Unternehmen</span></strong><strong>{topics.length}<span>verknüpfte Themenbereiche</span></strong><span className="muted">Die erste Rechercheauswahl wächst mit jedem freigegebenen Beitrag.</span></div></section><section><div className="section-title"><h2>Wissen nach Themen</h2><a href="/themen">Alle Bereiche ↗</a></div><div className="topic-grid">{topics.map(t=><TopicLink id={t.id} key={t.id}/>)}</div></section></main>;}
+
+export default async function Home({searchParams}:{searchParams:Promise<{q?:string;thema?:string}>}) {
+  const {q='',thema=''}=await searchParams;
+  const [all,catalog]=await Promise.all([allArticles(),companyCatalog()]);
+  const articles=all.filter(a=>matchesArticle(q,a));
+  const companies=catalog.filter(c=>matchesCompany(q,c));
+  const matching=matchingTopics(q);
+  const groups=topics.filter(t=>!thema||t.id===thema).map(t=>({
+    topic:t,
+    articles:articles.filter(a=>a.topics.includes(t.id)).sort((a,b)=>Date.parse(b.updated_at||b.published_at||b.data_as_of)-Date.parse(a.updated_at||a.published_at||a.data_as_of)),
+    companies:companies.filter(c=>c.topics.includes(t.id)),
+  })).filter(g=>!q||matching.includes(g.topic.id)||g.articles.length>0||g.companies.length>0);
+  const selected=topics.find(t=>t.id===thema);
+
+  return <main id="inhalt" className="container">
+    <div className="edition"><span><i/> Technik, Unternehmen & Perspektiven</span><span>Das Wissensmagazin</span></div>
+    <div className="topic-home-layout">
+      <section id="ergebnisse" className="topic-stream" aria-labelledby="topic-overview-title">
+        <div className="section-title"><h1 id="topic-overview-title">{selected?selected.name:q?'Themen zu deiner Suche':'Themen im Überblick'}</h1><span>{groups.length} {groups.length===1?'Bereich':'Bereiche'}<a className="topic-search-shortcut" href="#suche">Suche ↗</a></span></div>
+        <p className="topic-overview-intro">Wähle eine Technologie. Entdecke dazu Analysen, Memos und die Unternehmen dahinter.</p>
+        {(q||thema)&&<div className="topic-selection"><span>{q&&<>Suchbegriff: <strong>{q}</strong></>}{q&&thema?' · ':''}{selected&&<>Thema: <strong>{selected.short}</strong></>}</span><a href="/#ergebnisse">Auswahl zurücksetzen ↗</a></div>}
+
+        <div className="topic-feed">
+          {groups.map(({topic:t,articles:related,companies:relatedCompanies})=><section className="topic-feed-section" key={t.id} aria-labelledby={'topic-'+t.id}>
+            <div className="topic-feed-heading">
+              <a className="topic-feed-symbol" href={'/themen/'+t.id} aria-label={t.name+' entdecken'}><Icon kind={t.icon} size={28}/></a>
+              <div className="topic-feed-copy"><h2 id={'topic-'+t.id}><a href={'/themen/'+t.id}>{t.name}</a></h2><p>{t.description}</p></div>
+              <a className="topic-feed-open" href={'/themen/'+t.id} aria-label={'Alle Inhalte zu '+t.name+' ansehen'}>↗</a>
+            </div>
+            <div className="topic-feed-meta"><a href={'/themen/'+t.id}>{related.length} {related.length===1?'Beitrag':'Beiträge'}</a><span aria-hidden="true">·</span><a href={'/themen/'+t.id+'#unternehmen'}>{relatedCompanies.length} Unternehmen</a></div>
+            {related[0]?<div className="topic-feed-latest"><span className="topic-latest-label">{q?'Passender Beitrag':'Zuletzt ergänzt'}</span><ArticleRow article={related[0]} headingLevel="h3"/></div>:<p className="topic-feed-empty">{q?'Noch kein passender Beitrag.':'Noch keine Analyse veröffentlicht.'} <a href={'/themen/'+t.id+'#unternehmen'}>Unternehmen entdecken ↗</a></p>}
+          </section>)}
+        </div>
+        {!groups.length&&<div className="search-empty"><h3>Hierzu haben wir noch kein passendes Thema.</h3><p>Versuche einen Alltagsbegriff wie „Chips“ oder „Strom“, oder starte mit einer der Einstiegsfragen.</p><a className="read-link" href="/#ergebnisse">Alle acht Themen entdecken ↗</a></div>}
+      </section>
+
+      <aside id="suche" className="topic-search-panel" aria-label="Themen und Inhalte finden">
+        <p className="eyebrow">Dein Einstieg</p>
+        <SearchExplorer entries={buildSearchEntries(catalog,all)} initialQuery={q} topic={thema} compact/>
+        <div className="topic-search-filters"><p className="eyebrow">Themen eingrenzen</p><div className="filter-row"><a aria-current={!thema?'page':undefined} href={'/?q='+encodeURIComponent(q)+'#ergebnisse'}>Alle Themen</a>{topics.map(t=><a aria-current={thema===t.id?'page':undefined} href={'/?thema='+t.id+'&q='+encodeURIComponent(q)+'#ergebnisse'} key={t.id}>{t.short}</a>)}</div></div>
+        <a className="topic-company-directory" href="/unternehmen"><strong>{catalog.length} Unternehmen</strong><span>Nach Technologie eingeordnet ↗</span></a>
+      </aside>
+    </div>
+
+    <section className="knowledge-strip"><div><p className="eyebrow">Der Hintergrund jeder These</p><h2>Ein Thema endet selten<br/>an seiner eigenen Grenze.</h2><p>Rechenzentren brauchen Chips und Energie. Quanten-Technologie braucht Sicherheit. Unsere Themen verbinden das Wissen dahinter.</p><a className="read-link" href="/unternehmen">Unternehmen und Verbindungen entdecken ↗</a></div><div className="knowledge-stats"><strong>{catalog.length}<span>recherchierte Unternehmen</span></strong><strong>{topics.length}<span>verknüpfte Themenbereiche</span></strong><span className="muted">Die erste Rechercheauswahl wächst mit jedem freigegebenen Beitrag.</span></div></section>
+  </main>;
+}

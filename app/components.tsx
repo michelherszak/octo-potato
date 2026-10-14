@@ -14,6 +14,10 @@ export function Icon({kind='atom',size=24}:{kind?:string;size?:number}) {
   };return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[kind]||paths.atom}</svg>;
 }
 export function Tags({ids}:{ids:readonly string[]}) {return <div className="tags">{ids.map(id=><a key={id} href={'/themen/'+id}>{topicName(id)}</a>)}</div>;}
+export function ArticleRow({article:a,headingLevel='h3'}:{article:Article;headingLevel?:'h3'|'h4'}) {
+  const Heading=headingLevel;
+  return <article className="article-row"><a href={'/analysen/'+a.slug}><div><Heading>{a.title}</Heading><p>{a.kind} <span aria-hidden="true">·</span> {a.example?'Beispielbeitrag':dateText(a.updated_at||a.published_at||a.data_as_of)}{a.ticker&&<> <span aria-hidden="true">·</span> {a.ticker}</>}</p></div><span className="article-row-arrow" aria-hidden="true">↗</span></a></article>;
+}
 export function ArticleCard({article:a,featured=false}:{article:Article;featured?:boolean}) {const topic=topics.find(t=>t.id===a.topics[0]);return <article className={'article-card '+(featured?'featured':'')}><a className="artwork" href={'/analysen/'+a.slug} aria-label={a.title}><div className="diagram"><Icon kind={topic?.icon} size={featured?100:64}/><span className="diagram-orbit"/><span className="diagram-dot"/><span className="diagram-label">{a.ticker||topic?.short}</span></div><span className="artwork-kind">{a.kind}</span></a><div className="article-card-text"><Tags ids={a.topics}/><h2><a href={'/analysen/'+a.slug}>{a.title}</a></h2><p>{a.description}</p><div className="byline"><span>{a.author}</span><span>{a.example?'Beispielbeitrag':dateText(a.published_at||a.data_as_of)}</span></div><a className="read-link" href={'/analysen/'+a.slug}>Beitrag lesen <span>↗</span></a></div></article>;}
 export function dateText(d:string){return new Date(d).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'});}
 function inline(text:string) {return text.split(/(\*\*[^*]+\*\*)/g).map((p,i)=>p.startsWith('**')?<strong key={i}>{p.slice(2,-2)}</strong>:p);}
