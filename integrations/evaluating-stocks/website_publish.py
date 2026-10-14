@@ -153,6 +153,8 @@ def export_article(run, editorial):
         if not isinstance(value,(int,float)) or not math.isfinite(value):
             continue
         ev=evidence.get(key) or {}
+        if key=='forward_pe' and value<=0:
+            explanation='Der erwartete Gewinn ist nicht positiv. Das KGV eignet sich hier nicht für einen üblichen Vergleich profitabler Unternehmen; ein negativer Wert bedeutet nicht, dass die Aktie günstig ist.'
         unit=plain_memo.METRICS[key]['unit']
         def number(n):
             return f'{n:,.2f}'.replace(',','_').replace('.',',').replace('_','.')
@@ -164,9 +166,11 @@ def export_article(run, editorial):
         else:
             formatted=number(value)+ (' %' if unit=='%' else ' ×' if unit=='x' else '')
         urls=_urls(ev)
+        original_source=str(ev.get('source') or '')
+        source_label='Yahoo Finance · gespeicherte Auswertung' if 'Yahoo' in original_source else 'SEC-Unternehmensbericht · gespeicherte Auswertung' if 'SEC' in original_source else 'Berechnung aus gespeicherten Quelldaten' if ev.get('kind')=='derived' else 'Detailherkunft in der Auswertung nicht dokumentiert'
         metric={'key':key,'label':plain_memo.METRICS[key]['de'],'value':formatted,
                 'explanation':explanation,'period':str(ev.get('period_end') or 'Berichtszeitraum siehe Quelle; Auswertung '+run['created_at'][:10])[:150],
-                'source':str(ev.get('source') or 'Gespeicherte Auswertung; Detailherkunft nicht dokumentiert')[:500]}
+                'source':source_label}
         if urls:metric['source_url']=urls[0]
         metrics.append(metric)
     article={**e,'schema_version':1,'ticker':run.get('yahoo_symbol') or run.get('ticker') or '',
