@@ -1,0 +1,38 @@
+export const topics = [
+  {id:'quanten', name:'Quanten-Technologie', short:'Quanten', description:'Neue Rechner, Sensorik und Sicherheit im Quantenzeitalter.', icon:'atom'},
+  {id:'ki', name:'Künstliche Intelligenz', short:'KI', description:'Modelle, Daten und die Infrastruktur hinter künstlicher Intelligenz.', icon:'spark'},
+  {id:'halbleiter', name:'Halbleiter & Computertechnik', short:'Halbleiter', description:'Chips, Fertigung und die Verbindungen zwischen Rechnern.', icon:'chip'},
+  {id:'energie', name:'Energie & Infrastruktur', short:'Energie', description:'Stromnetze, Speicher und die Versorgung neuer Technologien.', icon:'energy'},
+  {id:'robotik', name:'Robotik & Automatisierung', short:'Robotik', description:'Maschinen, die sehen, handeln und Produktionsabläufe verändern.', icon:'robot'},
+  {id:'cybersecurity', name:'Cybersecurity', short:'Cybersecurity', description:'Identitäten, sichere Zugänge und Schutz vor digitalen Angriffen.', icon:'shield'},
+  {id:'raumfahrt', name:'Raumfahrt & Kommunikation', short:'Raumfahrt', description:'Satelliten, Raumfahrtsysteme und weltweite Datenverbindungen.', icon:'orbit'},
+  {id:'biotech', name:'Biotech & Medizintechnik', short:'Biotech', description:'Genveränderung, Forschungswerkzeuge und medizinische Geräte.', icon:'dna'},
+] as const;
+export type TopicId = typeof topics[number]['id'];
+export const companies: {ticker:string;name:string;topics:TopicId[];role:string;source:string}[] = [
+  {ticker:'ARQQ',name:'Arqit Quantum',topics:['quanten','cybersecurity'],role:'Verschlüsselungssoftware gegen Quantenangriffe',source:'https://ir.arqit.uk/'},
+  {ticker:'LAES',name:'SEALSQ',topics:['quanten','halbleiter','cybersecurity'],role:'Sicherheitschips und Post-Quanten-Kryptografie',source:'https://www.sealsq.com/investors'},
+  {ticker:'QNC',name:'Quantum eMotion',topics:['quanten','cybersecurity'],role:'Quantenzufallszahlen für Sicherheitslösungen',source:'https://www.quantumemotion.com/'},
+  {ticker:'CRWV',name:'CoreWeave',topics:['ki'],role:'Cloud-Infrastruktur für KI',source:'https://investors.coreweave.com/'},
+  {ticker:'APLD',name:'Applied Digital',topics:['ki','energie'],role:'Rechenzentren für Hochleistungsrechnen',source:'https://ir.applieddigital.com/'},
+  {ticker:'INOD',name:'Innodata',topics:['ki'],role:'Datenaufbereitung für KI-Entwicklung',source:'https://investor.innodata.com/'},
+  {ticker:'ALAB',name:'Astera Labs',topics:['halbleiter','ki'],role:'Verbindungstechnik für KI-Rechenzentren',source:'https://ir.asteralabs.com/'},
+  {ticker:'CRDO',name:'Credo Technology',topics:['halbleiter','ki','raumfahrt'],role:'Elektrische und optische Datenverbindungen',source:'https://investors.credosemi.com/'},
+  {ticker:'ONTO',name:'Onto Innovation',topics:['halbleiter'],role:'Mess- und Prüftechnik für Halbleiter',source:'https://ontoinnovation.com/'},
+  {ticker:'HUBB',name:'Hubbell',topics:['energie'],role:'Komponenten und Steuerung für Stromnetze',source:'https://investor.hubbell.com/'},
+  {ticker:'BWXT',name:'BWX Technologies',topics:['energie'],role:'Nukleartechnik und Komponenten',source:'https://investors.bwxt.com/'},
+  {ticker:'FLNC',name:'Fluence Energy',topics:['energie'],role:'Batteriespeicher und Optimierungssoftware',source:'https://ir.fluenceenergy.com/'},
+  {ticker:'SYM',name:'Symbotic',topics:['robotik','ki'],role:'Robotik und automatisierte Lagerlogistik',source:'https://ir.symbotic.com/'},
+  {ticker:'ROK',name:'Rockwell Automation',topics:['robotik'],role:'Industrielle Steuerung und Automatisierung',source:'https://www.rockwellautomation.com/en-us/company/investor-relations.html'},
+  {ticker:'CGNX',name:'Cognex',topics:['robotik','ki'],role:'Maschinelles Sehen für Produktion und Qualitätsprüfung',source:'https://investor.cognex.com/'},
+  {ticker:'ZS',name:'Zscaler',topics:['cybersecurity'],role:'Cloudbasierter Zugangsschutz',source:'https://ir.zscaler.com/'},
+  {ticker:'OKTA',name:'Okta',topics:['cybersecurity'],role:'Identitätsverwaltung und sichere Anmeldung',source:'https://investors.okta.com/'},
+  {ticker:'QLYS',name:'Qualys',topics:['cybersecurity'],role:'Schwachstellen- und Sicherheitsprüfung',source:'https://investor.qualys.com/'},
+  {ticker:'RKLB',name:'Rocket Lab',topics:['raumfahrt'],role:'Raketenstarts und Raumfahrtsysteme',source:'https://investors.rocketlabcorp.com/'},
+  {ticker:'PL',name:'Planet Labs',topics:['raumfahrt'],role:'Satellitenbilder und Erdbeobachtungsdaten',source:'https://investors.planet.com/'},
+  {ticker:'CIEN',name:'Ciena',topics:['raumfahrt','ki'],role:'Netzwerktechnik und optische Datenübertragung',source:'https://investor.ciena.com/'},
+  {ticker:'CRSP',name:'CRISPR Therapeutics',topics:['biotech'],role:'Therapien durch gezielte Genveränderung',source:'https://ir.crisprtx.com/'},
+  {ticker:'TWST',name:'Twist Bioscience',topics:['biotech'],role:'Synthetische DNA für Forschung und Entwicklung',source:'https://investors.twistbioscience.com/'},
+  {ticker:'PODD',name:'Insulet',topics:['biotech'],role:'Tragbare Insulinpumpen',source:'https://investors.insulet.com/'},
+];
+export function topicName(id:string) {return topics.find(t=>t.id===id)?.short ?? id;}

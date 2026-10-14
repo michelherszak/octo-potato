@@ -1,0 +1,1 @@
+export default function NotFound(){return <main id="inhalt" className="container page-heading"><p className="eyebrow">404</p><h1>Diese Seite gibt es nicht.</h1><p>Entdecke unsere Themen oder kehre zur Startseite zurück.</p><a className="read-link" href="/">Zur Startseite ↗</a></main>;}
