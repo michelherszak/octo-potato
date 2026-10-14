@@ -78,3 +78,7 @@ Die Tests prüfen Cluster, den strikten Publikationsvertrag, Quellenadressen, wi
 ## Projektstruktur
 
 `app/` enthält die öffentliche Darstellung und den Import-Endpunkt; `lib/` den Inhaltsvertrag, die Themenzuordnung und Beispieldaten; `db/` und `drizzle/` das Schema und Migrationen; `integrations/` die private Publisher-Bridge. Die mitgelieferten Build-Helfer stammen aus dem Sites/Vinext-Starter und behalten ihre Lizenzhinweise.
+
+### Suche mit Einstiegen
+
+Die Startseite und Unternehmensübersicht bieten acht verständliche Einstiegsfragen, Vorschläge beim Tippen und eine Suche nach Alltagsbegriffen (z. B. Strom, Chips, Medizin), englischen Themenbegriffen und kleineren Schreibfehlern. Die Vorschläge verlinken vorhandene Themen, Unternehmen und Beiträge. Sie entstehen aus dem aktuellen Veröffentlichungskatalog, ohne externe KI-Anfragen oder Speicherung von Suchverläufen. Neu veröffentlichte Unternehmen und Artikel werden beim nächsten Seitenaufruf automatisch aufgenommen. Pfeiltasten wählen einen Vorschlag, Enter öffnet ihn und Escape schließt die Liste. Der Suchknopf führt immer die eingegebene Suche aus.
