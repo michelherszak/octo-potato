@@ -62,7 +62,13 @@ Die erste Online-Testversion wird über Sites auf Cloudflare Workers mit einer e
 
 Lokale und gehostete Datenbanken sind getrennt. Die Hosting-Pipeline wendet die SQL-Migrationen an. D1-Inhalte und private Entwürfe sind keine Git-Backups: für dauerhaften Betrieb zusätzlich Inhalts- und Datenbankexporte einrichten.
 
-Vor einem öffentlichen Start Betreiberangaben und Datenschutzhinweise ergänzen, Datenrechte prüfen und die endgültige Domain festlegen. Die aktuelle Testversion bleibt privat. Die Anwendung enthält keine Werbung und kein Tracking.
+Vor einem öffentlichen Start Betreiberangaben und Datenschutzhinweise ergänzen, Datenrechte prüfen und die endgültige Domain festlegen. Die aktuelle Testversion bleibt privat. Die Anwendung enthält keine echte Werbung; die pseudonyme Besucherstatistik wird nur nach Einwilligung aktiviert.
+
+## Admin-Dashboard und Besucherstatistik
+
+`/admin` verwendet die von Sites bereitgestellte ChatGPT-Anmeldung. Nur E-Mail-Adressen aus der serverseitigen Einstellung `ADMIN_EMAILS` erhalten Zugriff; mehrere Adressen werden durch Kommas getrennt. Die Einstellung gehört in die lokale `.dev.vars` beziehungsweise in die geschützten Runtime-Einstellungen der gehosteten Website, niemals in Git.
+
+Die Besucherstatistik startet erst nach ausdrücklicher Einwilligung. Sie speichert eine zufällige, pseudonyme Browserkennung sowie Pfad, Seitentitel und Zeitpunkt des Aufrufs in D1. IP-Adressen, User-Agent und Klarnamen werden nicht gespeichert. Statistikdaten werden nach 180 Tagen automatisch gelöscht. Im Dashboard sind Unique Visitors für heute, sieben und 30 Tage sowie der Seitenverlauf je pseudonymem Besucher sichtbar.
 
 ## Prüfen
 
