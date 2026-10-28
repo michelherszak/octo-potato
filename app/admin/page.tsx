@@ -1,5 +1,6 @@
 import {env} from 'cloudflare:workers';
 import {headers} from 'next/headers';
+import AnalyticsExclusion from '@/app/AnalyticsExclusion';
 import {chatGPTSignInPath,chatGPTSignOutPath,getChatGPTUser} from '@/app/chatgpt-auth';
 import {getAnalyticsDashboard,isAdminEmail} from '@/lib/analytics';
 
@@ -25,6 +26,7 @@ export default async function AdminDashboard(){
       <article><span>Letzte 30 Tage</span><strong>{data.visitors30Days}</strong><small>Unique Visitors</small></article>
       <article><span>Seitenaufrufe · 30 Tage</span><strong>{data.pageViews30Days}</strong><small>{data.visitorsTotal} Besucher insgesamt</small></article>
     </section>
+    <AnalyticsExclusion/>
     <section className="admin-visitors" aria-labelledby="visitor-title">
       <div className="section-title"><h2 id="visitor-title">Besucher und Seitenverlauf</h2><span>Die letzten {data.visitors.length} Besucher</span></div>
       {!data.visitors.length?<div className="admin-empty"><h3>Noch keine Statistikdaten</h3><p>Seitenaufrufe erscheinen hier, sobald ein Besucher der anonymen Statistik zugestimmt hat.</p></div>:data.visitors.map((visitor,index)=><details className="admin-visitor" key={visitor.visitorId} open={index===0}>

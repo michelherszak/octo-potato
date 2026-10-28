@@ -70,6 +70,8 @@ Vor einem öffentlichen Start Betreiberangaben und Datenschutzhinweise ergänzen
 
 Die Besucherstatistik startet erst nach ausdrücklicher Einwilligung. Sie speichert eine zufällige, pseudonyme Browserkennung sowie Pfad, Seitentitel und Zeitpunkt des Aufrufs in D1. IP-Adressen, User-Agent und Klarnamen werden nicht gespeichert. Statistikdaten werden nach 180 Tagen automatisch gelöscht. Im Dashboard sind Unique Visitors für heute, sieben und 30 Tage sowie der Seitenverlauf je pseudonymem Besucher sichtbar.
 
+Eigene Besuche werden nicht mitgezählt. `/admin` war schon immer ausgenommen; zusätzlich verwirft der Server jeden Treffer, dessen Anfrage zu einem angemeldeten Konto aus `ADMIN_EMAILS` gehört. Er antwortet dann mit `x-techthese-analytics: excluded`, woraufhin der Browser den Ausschluss dauerhaft merkt und nichts mehr sendet — auch nach dem Abmelden. Im Dashboard lässt sich derselbe Ausschluss je Browser von Hand setzen oder wieder aufheben; er liegt im `localStorage` und gilt deshalb pro Browser und Profil.
+
 ## Prüfen
 
 ```sh
