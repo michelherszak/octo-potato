@@ -8,6 +8,7 @@ function matches(payload:string,article:Packet['article']) {
   return JSON.stringify(selected)===JSON.stringify(article);
 }
 export async function importArticle(db:Database,packet:Packet,base:string,now=new Date().toISOString()) {
+  packet=importSchema.parse(packet);
   const {article,publication_id,expected_revision}=packet;
   async function repeated(){const prior=await db.prepare('SELECT payload FROM article_versions WHERE publication_id=?').bind(publication_id).first<{payload:string}>();if(!prior)return null;if(!matches(prior.payload,article))throw new ImportConflict('Übertragungskennung wurde bereits für einen anderen Inhalt verwendet.');const p=JSON.parse(prior.payload);return {slug:p.slug,revision:p.revision,url:base+'/analysen/'+p.slug,idempotent:true};}
   const retry=await repeated();if(retry)return retry;
