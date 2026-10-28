@@ -15,6 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from . import evaluation, publications, plain_memo
 from .config import DATA_DIR
 from .store import read_json, write_json
+from .website_review_policy import validate_review
+from .website_memo import build_memo_overview
 
 router = APIRouter(prefix='/api/website')
 SETTINGS = DATA_DIR / 'website_settings.json'
@@ -51,6 +53,10 @@ class EditorialIn(BaseModel):
     topics: list[str] = Field(min_length=1,max_length=8)
     thesis: str = Field(min_length=20,max_length=30000)
     memo: str = Field(min_length=20,max_length=60000)
+    rights_basis: str = Field(default='', max_length=3000)
+    conflicts: str = Field(default='', max_length=3000)
+    advertising: str = Field(default='none', pattern=r'^(none|paid|affiliate)$')
+    advertising_details: str = Field(default='', max_length=2000)
     original_analysis_at: str = ''
     additional_sources: list[dict[str,str]] = Field(default_factory=list,max_length=40)
 
@@ -83,6 +89,9 @@ class PushIn(BaseModel):
     publication_id: UUID
     editorial: EditorialIn
     approved: bool = False
+    edited: bool = False
+    facts_checked: bool = False
+    commercial_rights_confirmed: bool = False
     expected_revision: int = Field(default=0,ge=0)
     target_url: str = Field(default='',max_length=2000)
 
@@ -134,6 +143,8 @@ def readable_memo(run):
 
 def export_article(run, editorial):
     e=editorial.model_dump() if isinstance(editorial,EditorialIn) else dict(editorial)
+    for field in ('rights_basis', 'conflicts', 'advertising', 'advertising_details'):
+        e.pop(field, None)
     sources=[{'title':'Yahoo Finance – '+str(run.get('name') or ''),'url':'https://finance.yahoo.com/quote/'+str(run.get('yahoo_symbol') or run.get('ticker') or '')}]
     sources.extend(e.pop('additional_sources',[]))
     evidence=run.get('figure_evidence') or {}
@@ -177,6 +188,7 @@ def export_article(run, editorial):
              'company':run.get('name') or '', 'kind':'Analyse & Memo','data_as_of':run['created_at'],
              'source_run_id':run['run_id'],'metrics':metrics,'sources':sources,
              'model_verdict':run.get('verdict') or '', 'model_score':run.get('score'),
+             'memo_overview':build_memo_overview(run),
              'top_risk':run.get('top_risk') or '',
              'summary':[str((run.get('plain_text') or {}).get('core_message') or e['description'])[:700]],
              'methodology':'Redaktioneller Artikel auf Basis einer freigegebenen, gespeicherten Auswertung. Kennzahlen bleiben auf diesem Datenstand. Das Modellurteil ist von der persönlichen These zu unterscheiden.','ai_assisted':True}
@@ -230,13 +242,21 @@ def push(run_id:str,body:PushIn):
     if not body.approved:raise HTTPException(400,'Bitte den fertigen Beitrag ausdrücklich freigeben')
     run=evaluation.get_run(run_id)
     if not eligible(run):raise HTTPException(409,'Nur geprüfte, veröffentlichte Auswertungen mit vollständigem Memo können übertragen werden')
+    saved=read_json(DRAFTS,{}).get(run_id,{}).get('editorial')
+    original_thesis=str((run.get('plain_text') or {}).get('core_message') or 'Bitte ergänze hier deine persönliche Analyse und These.')
+    try:
+        validate_review(body.editorial.model_dump(), original_thesis, readable_memo(run), saved, body.model_dump())
+    except ValueError as exc:
+        raise HTTPException(409,str(exc)) from exc
     settings=_settings()
     try:url=_target(settings)
     except ValueError as exc:raise HTTPException(400,str(exc)) from exc
     if body.target_url.rstrip('/') != url:raise HTTPException(409,'Website-Ziel hat sich geändert. Bitte den Entwurf erneut prüfen und freigeben.')
     if not settings.get('token'):raise HTTPException(400,'Veröffentlichungsschlüssel fehlt')
     article=export_article(run,body.editorial)
-    fingerprint=hashlib.sha256(json.dumps(article,sort_keys=True).encode()).hexdigest()
+    review={key:getattr(body.editorial,key).strip() for key in ('rights_basis','conflicts','advertising','advertising_details')}
+    review.update(reviewer=body.editorial.author.strip(),edited=True,facts_checked=True,commercial_rights_confirmed=True)
+    fingerprint=hashlib.sha256(json.dumps({'article':article,'review':review},sort_keys=True).encode()).hexdigest()
     headers={'Authorization':'Bearer '+settings['token']}
     if settings.get('sites_service_token'):headers['OAI-Sites-Authorization']='Bearer '+settings['sites_service_token']
     key=str(body.publication_id)
@@ -246,8 +266,11 @@ def push(run_id:str,body:PushIn):
         if previous and previous.get('fingerprint')!=fingerprint:raise HTTPException(409,'Diese Übertragungskennung wurde für einen anderen Inhalt verwendet')
         if previous and previous.get('state')=='done':return previous['result']
         revision=previous['revision'] if previous else body.expected_revision
+        reviewed_at=previous.get('reviewed_at') if previous else None
+        reviewed_at=reviewed_at or datetime.now(timezone.utc).isoformat()
+        article['editorial_review']={**review,'reviewed_at':reviewed_at}
         packet={'publication_id':key,'expected_revision':revision,'article':article}
-        records[key]={'fingerprint':fingerprint,'revision':revision,'state':'pending'}
+        records[key]={'fingerprint':fingerprint,'revision':revision,'state':'pending','reviewed_at':reviewed_at}
         write_json(PUSHES,records)
         try:
             response=httpx.post(url+'/api/import',json=packet,headers=headers,timeout=30,follow_redirects=False)

@@ -6,7 +6,10 @@ p=argparse.ArgumentParser();p.add_argument('--app',required=True);p.add_argument
 root=Path(a.app).resolve();assets=Path(__file__).resolve().parent/'evaluating-stocks'
 if not (root/'backend/app/main.py').is_file():p.error('Not an Evaluating Stocks checkout')
 updates={
+    root/'backend/app/website_memo.py':(assets/'website_memo.py').read_text(),
+    root/'backend/app/website_review_policy.py':(assets/'website_review_policy.py').read_text(),
     root/'backend/app/website_publish.py':(assets/'website_publish.py').read_text(),
+    root/'web/src/components/WebsiteMemoPreview.jsx':(assets/'WebsiteMemoPreview.jsx').read_text(),
     root/'web/src/components/WebsitePublishPanel.jsx':(assets/'WebsitePublishPanel.jsx').read_text(),
 }
 def insert(relative,anchor,value,marker):

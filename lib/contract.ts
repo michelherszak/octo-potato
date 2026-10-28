@@ -1,10 +1,12 @@
 import {z} from 'zod';
 import {topics} from './catalog.ts';
 import {reviewSchema} from './publication-policy.ts';
+import {memoOverviewSchema} from './memo-overview.ts';
 const safeUrl=z.string().url().max(2000).refine(s=>/^https?:\/\//.test(s),'Nur HTTP(S)-Quellen');
 const date=z.string().datetime({offset:true});
 export const articleSchema=z.object({
   editorial_review:reviewSchema.optional(),
+  memo_overview:memoOverviewSchema.optional(),
   schema_version:z.literal(1),slug:z.string().min(3).max(150).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   title:z.string().trim().min(5).max(180),description:z.string().trim().min(20).max(320),author:z.string().trim().min(2).max(120),
   topics:z.array(z.string().refine(s=>topics.some(t=>t.id===s))).min(1).max(8).refine(a=>new Set(a).size===a.length),

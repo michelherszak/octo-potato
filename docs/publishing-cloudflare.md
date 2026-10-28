@@ -28,3 +28,13 @@ Retries preserve their publication identity and revisions; stale changes are rej
 The eight topic categories remain predefined. New articles and company links use
 the selected categories automatically. Adding a category requires coordinated
 changes to the website and the private publisher.
+
+## Company overview
+
+New articles also carry a structured `memo_overview` from the saved evaluation:
+model rating (Strong Buy through Strong Sell), Piotroski F-Score, four business
+questions, reporting-currency cash-flow figures, annual costs, analyst comparison
+and data limitations. The local draft preview shows these fields before approval.
+The full edited memo remains part of the article. Older articles remain readable;
+they need a reviewed republication to gain the new overview data. Missing numbers
+are not replaced by zero, and annual costs are not added to twelve-month cash flows.
