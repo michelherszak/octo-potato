@@ -8,12 +8,13 @@ export default function WebsitePublishPanel({runId}) {
   const [error,setError]=useState(''),[busy,setBusy]=useState(false),[approved,setApproved]=useState(false)
   const [result,setResult]=useState(null),[revision,setRevision]=useState(0),[requestId,setRequestId]=useState(()=>crypto.randomUUID())
   const [sourceText,setSourceText]=useState('')
+  const [notifySubscribers,setNotifySubscribers]=useState(false)
   const [checks,setChecks]=useState({edited:false,facts_checked:false,commercial_rights_confirmed:false})
   const reviewed=Object.values(checks).every(Boolean)
   useEffect(()=>{let active=true;api.websiteDraft(runId).then(d=>{if(active){setData(d);setForm(d.editorial);setSourceText((d.editorial.additional_sources||[]).map(s=>s.title+' | '+s.url).join('\n'))}}).catch(e=>{if(active)setError(e.message)});return()=>{active=false}},[runId])
-  function change(key,value){setChecks({edited:false,facts_checked:false,commercial_rights_confirmed:false});setForm(f=>({...f,[key]:value}));setApproved(false);setPreview(null);setResult(null);setRequestId(crypto.randomUUID())}
+  function change(key,value){setNotifySubscribers(false);setChecks({edited:false,facts_checked:false,commercial_rights_confirmed:false});setForm(f=>({...f,[key]:value}));setApproved(false);setPreview(null);setResult(null);setRequestId(crypto.randomUUID())}
   async function inspect(){setBusy(true);setError('');setApproved(false);try{const d=await api.websitePreview(runId,form);setPreview(d.article);setRevision(d.revision);setData(previous=>({...previous,connection:d.connection}));if(!d.connected)setError('Vorschau bereit; die Website-Verbindung konnte noch nicht bestätigt werden.')}catch(e){setError(e.message)}finally{setBusy(false)}}
-  async function push(){setBusy(true);setError('');try{const d=await api.websitePush(runId,{publication_id:requestId,editorial:form,approved,...checks,expected_revision:revision,target_url:data.connection.url});setResult(d);setRevision(d.revision);setApproved(false);setRequestId(crypto.randomUUID())}catch(e){setError(e.message)}finally{setBusy(false)}}
+  async function push(){setBusy(true);setError('');try{const d=await api.websitePush(runId,{publication_id:requestId,editorial:form,approved,notify_subscribers:notifySubscribers,...checks,expected_revision:revision,target_url:data.connection.url});setResult(d);setRevision(d.revision);setApproved(false);setRequestId(crypto.randomUUID())}catch(e){setError(e.message)}finally{setBusy(false)}}
   return <details className="lifecycle-card website-publish"><summary>Auf TechThese veröffentlichen · Analyse & Memo</summary>
     <p>Ergänze deine Analyse, prüfe den lesbaren Memo-Text und ordne den Beitrag den passenden Themen zu.</p>
     {error&&<div className="error" role="alert">{error}</div>}
@@ -37,9 +38,10 @@ export default function WebsitePublishPanel({runId}) {
         ['facts_checked','Ich habe Fakten, Quellen, Datenstand, Risiken und Interessenkonflikte geprüft.'],
         ['commercial_rights_confirmed','Die erforderlichen Rechte für die Veröffentlichung einschließlich kommerzieller Nutzung liegen vor; die Grundlage ist oben dokumentiert.']
       ].map(([key,label])=><label key={key}><input type="checkbox" checked={checks[key]} onChange={e=>{setChecks(c=>({...c,[key]:e.target.checked}));setApproved(false)}}/>{label}</label>)}</fieldset>
+      {preview&&<div className="website-notify">{revision>0?<label><input type="checkbox" checked={notifySubscribers} onChange={e=>{setNotifySubscribers(e.target.checked);setApproved(false);setRequestId(crypto.randomUUID())}}/>Abonnenten über diese inhaltliche Aktualisierung informieren.</label>:<p>Neue Beiträge werden automatisch an bestätigte Abonnenten des Unternehmens gemeldet.</p>}<p className="muted small">Wiederholte Übertragungen lösen keine zweite E-Mail aus. Kleine Korrekturen kannst du ohne Benachrichtigung veröffentlichen.</p></div>}
       <label className="website-approval"><input type="checkbox" checked={approved} disabled={!preview||!reviewed||busy} onChange={e=>setApproved(e.target.checked)}/>Ich habe Text, Kennzahlen, Quellen und Themen geprüft und gebe diesen Beitrag frei.</label>
       <button type="button" className="primary" disabled={busy||!reviewed||!approved||!preview||!data.eligible||!data.connection.configured} onClick={push}>{busy?'Übertragung läuft …':revision?'Aktualisierte Version veröffentlichen':'Auf Website veröffentlichen'}</button>
-      {result&&<p role="status">Veröffentlicht als Version {result.revision}. <a href={result.url} target="_blank" rel="noopener noreferrer">Artikel ansehen ↗</a></p>}
+      {result&&<p role="status">Veröffentlicht als Version {result.revision}. <a href={result.url} target="_blank" rel="noopener noreferrer">Artikel ansehen ↗</a>{typeof result.notifications_queued==='number'&&<> · {result.notifications_queued} E-Mail-Benachrichtigungen vorgemerkt.</>}</p>}
     </>}
   </details>
 }

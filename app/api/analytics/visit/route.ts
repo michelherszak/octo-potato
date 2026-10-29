@@ -14,6 +14,7 @@ export async function POST(request:Request){
   try{body=await request.json();}catch{return Response.json({detail:'Ungültiges JSON.'},{status:400});}
   const parsed=parsePageView(body);
   if(!parsed.success)return Response.json({detail:'Ungültige Statistikdaten.'},{status:400});
+  if(parsed.data.path.split('?')[0].startsWith('/konto'))return new Response(null,EXCLUDED);
   // Eigene Admin-Besuche gehören nicht in die Statistik.
   const user=await getChatGPTUser();
   const host=(await headers()).get('host')||'';

@@ -15,6 +15,13 @@
       "when": 1793195931121,
       "tag": "0001_deep_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793298756585,
+      "tag": "0002_neat_preak",
+      "breakpoints": true
     }
   ]
 }

@@ -89,6 +89,7 @@ class PushIn(BaseModel):
     publication_id: UUID
     editorial: EditorialIn
     approved: bool = False
+    notify_subscribers: bool = False
     edited: bool = False
     facts_checked: bool = False
     commercial_rights_confirmed: bool = False
@@ -256,7 +257,7 @@ def push(run_id:str,body:PushIn):
     article=export_article(run,body.editorial)
     review={key:getattr(body.editorial,key).strip() for key in ('rights_basis','conflicts','advertising','advertising_details')}
     review.update(reviewer=body.editorial.author.strip(),edited=True,facts_checked=True,commercial_rights_confirmed=True)
-    fingerprint=hashlib.sha256(json.dumps({'article':article,'review':review},sort_keys=True).encode()).hexdigest()
+    fingerprint=hashlib.sha256(json.dumps({'article':article,'review':review,'notify_subscribers':body.notify_subscribers},sort_keys=True).encode()).hexdigest()
     headers={'Authorization':'Bearer '+settings['token']}
     if settings.get('sites_service_token'):headers['OAI-Sites-Authorization']='Bearer '+settings['sites_service_token']
     key=str(body.publication_id)
@@ -269,7 +270,7 @@ def push(run_id:str,body:PushIn):
         reviewed_at=previous.get('reviewed_at') if previous else None
         reviewed_at=reviewed_at or datetime.now(timezone.utc).isoformat()
         article['editorial_review']={**review,'reviewed_at':reviewed_at}
-        packet={'publication_id':key,'expected_revision':revision,'article':article}
+        packet={'publication_id':key,'expected_revision':revision,'notify_subscribers':body.notify_subscribers,'article':article}
         records[key]={'fingerprint':fingerprint,'revision':revision,'state':'pending','reviewed_at':reviewed_at}
         write_json(PUSHES,records)
         try:

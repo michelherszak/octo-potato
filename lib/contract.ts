@@ -17,6 +17,7 @@ export const articleSchema=z.object({
   source_run_id:z.string().max(200).default(''),model_verdict:z.string().max(100).default(''),model_score:z.number().finite().min(0).max(100).nullable().default(null),
   top_risk:z.string().max(3000).default(''),methodology:z.string().max(2000).default(''),ai_assisted:z.boolean().default(true),
 }).strict();
-export const importSchema=z.object({publication_id:z.string().uuid(),expected_revision:z.number().int().nonnegative(),article:articleSchema.extend({editorial_review:reviewSchema.refine(r=>r.advertising==='none','Bezahlte und Affiliate-Beiträge sind bis zur gesonderten Prüfung gesperrt.')})}).strict();
+export const importSchema=z.object({publication_id:z.string().uuid(),expected_revision:z.number().int().nonnegative(),notify_subscribers:z.boolean().optional(),article:articleSchema.extend({editorial_review:reviewSchema.refine(r=>r.advertising==='none','Bezahlte und Affiliate-Beiträge sind bis zur gesonderten Prüfung gesperrt.')})}).strict();
 export type Article=z.infer<typeof articleSchema> & {published_at?:string;updated_at?:string;revision?:number;example?:boolean};
+export const storedArticleSchema=articleSchema.extend({published_at:date.optional(),updated_at:date.optional(),revision:z.number().int().positive().optional(),example:z.boolean().optional(),notification_requested:z.boolean().optional()});
 export function metadataFor(a:Article,base:string) {const url=new URL('/analysen/'+a.slug,base).href;return {title:a.title+' | TechThese',description:a.description,alternates:{canonical:url},openGraph:{type:'article' as const,title:a.title,description:a.description,url,locale:'de_DE',siteName:'TechThese',publishedTime:a.published_at,modifiedTime:a.updated_at},robots:{index:!a.example,follow:true}};}

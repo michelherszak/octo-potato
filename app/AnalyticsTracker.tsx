@@ -30,7 +30,7 @@ export default function AnalyticsTracker(){
   },[]);
 
   useEffect(()=>{
-    if(consent!=='accepted'||excluded||!pathname||pathname.startsWith('/admin'))return;
+    if(consent!=='accepted'||excluded||!pathname||(pathname.startsWith('/admin')||pathname.startsWith('/konto')))return;
     if(localStorage.getItem(EXCLUDE_KEY)==='1'){setExcluded(true);return;}
     const id=visitorId();
     const now=Date.now();
@@ -52,7 +52,7 @@ export default function AnalyticsTracker(){
     }).catch(()=>{});
   },[consent,excluded,pathname]);
 
-  if(pathname?.startsWith('/admin')||excluded||consent!=='unknown')return null;
+  if((pathname?.startsWith('/admin')||pathname?.startsWith('/konto'))||excluded||consent!=='unknown')return null;
   return <aside className="analytics-consent" aria-label="Einstellungen zur Besucherstatistik">
     <div><strong>Hilf uns, TechThese besser zu machen.</strong><p>Mit deiner Einwilligung zählen wir pseudonym, welche Seiten besucht werden. Keine Werbenetzwerke, keine IP-Speicherung. <a href="/rechtliches">Mehr erfahren</a></p></div>
     <div className="analytics-consent-actions">

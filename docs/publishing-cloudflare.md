@@ -23,7 +23,9 @@ database binding returns 503. Incomplete POST payloads return 422 before any wri
 New imports require the editorial review object sent by the current publisher,
 including editing, fact checking, rights and disclosure confirmations. Direct
 service calls enforce the same contract. Earlier saved articles remain readable.
-Retries preserve their publication identity and revisions; stale changes are rejected.
+Retries preserve their publication identity, notification choice and revisions; stale changes are rejected.
+New articles notify confirmed subscribers. Revisions notify only when the publisher
+sets `notify_subscribers: true`. The response reports `notifications_queued`.
 
 The eight topic categories remain predefined. New articles and company links use
 the selected categories automatically. Adding a category requires coordinated
