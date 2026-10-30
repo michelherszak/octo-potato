@@ -12,7 +12,7 @@ from uuid import UUID
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from . import evaluation, publications, plain_memo
+from . import evaluation, plain_memo
 from .config import DATA_DIR
 from .store import read_json, write_json
 from .website_review_policy import validate_review
