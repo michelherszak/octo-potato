@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import type {User} from '@supabase/supabase-js';
-import {getAccountProfile,syncAccountProfile} from '../lib/supabase-accounts.ts';
+import {getAccountProfile,listFollows,syncAccountProfile} from '../lib/supabase-accounts.ts';
 import {safeNextPath} from '../lib/supabase-browser.ts';
 
 function database(){
   const sqlite=new DatabaseSync(':memory:');
   for(const file of readdirSync(new URL('../drizzle/',import.meta.url)).filter(file=>file.endsWith('.sql')).sort())sqlite.exec(readFileSync(new URL('../drizzle/'+file,import.meta.url),'utf8'));
-  function prepare(sql:string){let values:unknown[]=[];return {bind(...args:unknown[]){values=args;return this},async first<T>(){return (sqlite.prepare(sql).get(...values as never[])||null) as T|null},async run(){const result=sqlite.prepare(sql).run(...values as never[]);return {meta:{changes:Number(result.changes)}}}};}
+  function prepare(sql:string){let values:unknown[]=[];return {bind(...args:unknown[]){values=args;return this},async first<T>(){return (sqlite.prepare(sql).get(...values as never[])||null) as T|null},async all<T>(){return {results:sqlite.prepare(sql).all(...values as never[]) as T[]}},async run(){const result=sqlite.prepare(sql).run(...values as never[]);return {meta:{changes:Number(result.changes)}}}};}
   return {prepare} as unknown as D1Database;
 }
 
@@ -82,4 +82,17 @@ test('a company can be followed idempotently and unfollowed again',async()=>{
   await db.prepare('DELETE FROM company_follows WHERE user_id=? AND ticker=?').bind(userId,'NVDA').run();
   const remaining=await db.prepare('SELECT COUNT(*) AS total FROM company_follows').first<{total:number}>();
   assert.equal(remaining?.total,0);
+});
+
+test('the account lists followed companies newest first and drops them on unfollow',async()=>{
+  const db=database();
+  const userId='9c1d2f3a-5b6c-4d7e-8f90-a1b2c3d4e5f6';
+  const other='1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d';
+  await db.prepare('INSERT INTO company_follows (user_id,ticker,created_at) VALUES (?,?,?)').bind(userId,'NVDA',100).run();
+  await db.prepare('INSERT INTO company_follows (user_id,ticker,created_at) VALUES (?,?,?)').bind(userId,'ASML',300).run();
+  await db.prepare('INSERT INTO company_follows (user_id,ticker,created_at) VALUES (?,?,?)').bind(other,'TSM',200).run();
+  assert.deepEqual((await listFollows(db,userId)).map(follow=>follow.ticker),['ASML','NVDA']);
+  await db.prepare('DELETE FROM company_follows WHERE user_id=? AND ticker=?').bind(userId,'ASML').run();
+  assert.deepEqual(await listFollows(db,userId),[{ticker:'NVDA',createdAt:100}]);
+  assert.deepEqual((await listFollows(db,other)).map(follow=>follow.ticker),['TSM']);
 });

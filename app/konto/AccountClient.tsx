@@ -2,13 +2,15 @@
 /* eslint-disable @next/next/no-img-element -- avatar host is configured at runtime by Supabase. */
 
 import {FormEvent,useEffect,useState} from 'react';
+import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import type {AccountProfile} from '@/lib/supabase-accounts';
 import {AVATAR_BUCKET,getSupabaseBrowserClient,publicAvatarUrl,type PublicSupabaseConfig} from '@/lib/supabase-browser';
 import PasswordField from '../PasswordField';
 
 type AuditEntry={event:string;detail:Record<string,unknown>;createdAt:number};
-type AccountData={profile:AccountProfile;audit:AuditEntry[]};
+type Follow={ticker:string;name:string;createdAt:number};
+type AccountData={profile:AccountProfile;audit:AuditEntry[];follows:Follow[]};
 const dateTime=new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Berlin'});
 const eventNames:Record<string,string>={account_verified:'Konto bestätigt',signed_in:'Angemeldet',profile_updated:'Profil aktualisiert',password_changed:'Passwort geändert',email_change_requested:'E-Mail-Änderung angefordert',company_followed:'Unternehmen gefolgt',company_unfollowed:'Unternehmen nicht mehr gefolgt'};
 
@@ -137,10 +139,19 @@ export default function AccountClient({config}:{config:PublicSupabaseConfig}){
   }
 
   if(!data)return <div className="account-loading"><p className="eyebrow">TechThese Konto</p><h1>Konto wird geladen …</h1>{message&&<div className={'auth-message '+message.kind}>{message.text}</div>}</div>;
+  async function unfollow(ticker:string){
+    setMessage(null);setBusy(true);
+    const response=await fetch('/api/follows',{method:'DELETE',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({ticker})});
+    if(response.ok)setData(current=>current?{...current,follows:current.follows.filter(follow=>follow.ticker!==ticker)}:current);
+    else{const payload=await response.json().catch(()=>null) as {detail?:string}|null;setMessage({kind:'error',text:payload?.detail||'Das Unternehmen konnte nicht entfernt werden.'});}
+    setBusy(false);
+  }
+
   return <div className="account-shell">
     <header className="account-heading"><div><p className="eyebrow">TechThese Konto</p><h1>{data.profile.displayName}</h1><p>{data.profile.email} · E-Mail bestätigt</p></div><div className="account-heading-actions"><span>{data.profile.role==='super_admin'?'Super Admin':data.profile.role==='buyer'?'Buyer':'Benutzerkonto'}</span>{data.profile.role==='super_admin'&&<a href="/admin">Zum Admin-Dashboard ↗</a>}<button onClick={signOut}>Abmelden</button></div></header>
     {message&&<div className={'auth-message '+message.kind} role="status">{message.text}</div>}
     <div className="account-hub-grid">
+      <section className="account-card account-follows"><h2>Meine Unternehmen</h2>{data.follows.length?<><p className="muted">{data.follows.length===1?'Du folgst einem Unternehmen.':'Du folgst '+data.follows.length+' Unternehmen.'}</p><ul className="follow-list">{data.follows.map(follow=><li key={follow.ticker}><a href={'/unternehmen/'+follow.ticker}><span className="ticker">{follow.ticker}</span><span>{follow.name}</span></a><button type="button" disabled={busy} onClick={()=>unfollow(follow.ticker)} aria-label={'Nicht mehr folgen: '+follow.name}>Nicht mehr folgen</button></li>)}</ul></>:<p className="muted">Du folgst noch keinem Unternehmen. Öffne ein Unternehmen und klicke dort auf „Folgen“. <Link href="/">Unternehmen ansehen ↗</Link></p>}</section>
       <section className="account-card"><h2>Profil</h2><div className="avatar-editor"><span className="avatar-preview">{avatarUrl?<img src={avatarUrl} width="82" height="82" alt="Aktuelles Profilbild"/>:<b aria-hidden="true">{data.profile.displayName.slice(0,1).toUpperCase()}</b>}</span><div><label className="avatar-upload">Profilbild auswählen<input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={event=>{const file=event.target.files?.[0];if(file)void uploadAvatar(file);event.target.value='';}}/></label><small>JPEG, PNG oder WebP · 80–4096 px · maximal 2 MB</small>{avatarUrl&&<button type="button" className="avatar-remove" disabled={busy} onClick={removeAvatar}>Bild entfernen</button>}</div></div><form onSubmit={saveProfile}><label>Anzeigename<input value={displayName} minLength={2} maxLength={80} onChange={event=>setDisplayName(event.target.value)}/></label><button disabled={busy}>Profil speichern</button></form></section>
       <section className="account-card"><h2>E-Mail-Adresse</h2><form onSubmit={changeEmail}><label>Bestätigte Adresse<input type="email" value={newEmail} onChange={event=>setNewEmail(event.target.value)}/></label><button disabled={busy||newEmail===data.profile.email}>Neue Adresse bestätigen</button></form></section>
       <section className="account-card"><h2>Passwort ändern</h2><form onSubmit={changePassword}><PasswordField label="Aktuelles Passwort" autoComplete="current-password" value={currentPassword} onChange={setCurrentPassword}/><PasswordField label="Neues Passwort" autoComplete="new-password" value={newPassword} onChange={setNewPassword}/><button disabled={busy}>Passwort ändern</button></form></section>

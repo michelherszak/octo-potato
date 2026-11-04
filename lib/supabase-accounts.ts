@@ -94,3 +94,9 @@ export async function accountAudit(db:D1Database,userId:string){
     WHERE user_id=? ORDER BY created_at DESC LIMIT 100`).bind(userId).all<{event:string;detail:string;created_at:number}>();
   return results.map(row=>({event:row.event,detail:JSON.parse(row.detail||'{}'),createdAt:Number(row.created_at)}));
 }
+
+export async function listFollows(db:D1Database,userId:string){
+  const {results}=await db.prepare(`SELECT ticker,created_at FROM company_follows
+    WHERE user_id=? ORDER BY created_at DESC`).bind(userId).all<{ticker:string;created_at:number}>();
+  return results.map(row=>({ticker:row.ticker,createdAt:Number(row.created_at)}));
+}

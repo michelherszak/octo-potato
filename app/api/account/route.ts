@@ -1,7 +1,8 @@
 import {env} from 'cloudflare:workers';
 import {z} from 'zod';
-import {accountAudit,recordAuthEvent,syncAccountProfile} from '@/lib/supabase-accounts';
+import {accountAudit,listFollows,recordAuthEvent,syncAccountProfile} from '@/lib/supabase-accounts';
 import {authErrorResponse,AuthError,getSupabaseAdminClient,requireSameOrigin,requireVerifiedSupabaseUser} from '@/lib/supabase-server';
+import {companyCatalog} from '@/lib/content';
 
 const profileSchema=z.object({
   displayName:z.string().trim().min(2).max(80).optional(),
@@ -21,7 +22,9 @@ async function authenticated(request:Request){
 export async function GET(request:Request){
   try{
     const {profile}=await authenticated(request);
-    return Response.json({profile,audit:await accountAudit(env.DB!,profile.userId)},{headers:noStore});
+    const [audit,follows,catalog]=await Promise.all([accountAudit(env.DB!,profile.userId),listFollows(env.DB!,profile.userId),companyCatalog()]);
+    const names=new Map(catalog.map(company=>[company.ticker,company.name] as const));
+    return Response.json({profile,audit,follows:follows.map(follow=>({...follow,name:names.get(follow.ticker)||follow.ticker}))},{headers:noStore});
   }catch(error){return authErrorResponse(error);}
 }
 
