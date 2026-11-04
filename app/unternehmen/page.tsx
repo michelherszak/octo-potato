@@ -1,7 +1,3 @@
-import {companyCatalog} from '@/lib/content';
-import {Tags} from '../components';
-import SearchExplorer from '../SearchExplorer';
-import {buildSearchEntries,matchesCompany} from '@/lib/search';
-export const dynamic='force-dynamic';
-export const metadata={title:'Unternehmen – TechThese',description:'Technologieunternehmen nach ihren Rollen und Themenbereichen entdecken.'};
-export default async function Companies({searchParams}:{searchParams:Promise<{q?:string}>}){const {q=''}=await searchParams;const all=await companyCatalog();const catalog=all.filter(c=>matchesCompany(q,c));return <main id="inhalt" className="container company-index"><section className="browse"><SearchExplorer entries={buildSearchEntries(all,[])} initialQuery={q} action="/unternehmen" companiesOnly/></section><div className="section-title"><h1>Unternehmen</h1><span>{catalog.length} Unternehmen</span></div><div className="company-list">{!catalog.length&&<div className="search-empty"><h2>Hierzu haben wir noch kein Unternehmen in der Auswahl.</h2><p>Versuche einen Begriff wie „Strom“, „Chips“ oder „Satelliten“ – oder starte mit einer Frage weiter oben.</p><a className="read-link" href="/unternehmen">Alle Unternehmen ansehen ↗</a></div>}{catalog.map(c=><article key={c.ticker}><a className="ticker" href={'/unternehmen/'+c.ticker}>{c.ticker}</a><div><h3><a href={'/unternehmen/'+c.ticker}>{c.name}</a></h3><p>{c.role}</p></div><Tags ids={c.topics}/></article>)}</div></main>;}
+import {permanentRedirect} from 'next/navigation';
+// Der Unternehmenskatalog ist der Einstieg der Website und liegt jetzt auf "/".
+export default async function Companies({searchParams}:{searchParams:Promise<{q?:string}>}){const {q=''}=await searchParams;permanentRedirect(q?'/?q='+encodeURIComponent(q):'/');}
