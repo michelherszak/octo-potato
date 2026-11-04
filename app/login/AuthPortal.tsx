@@ -2,6 +2,7 @@
 
 import {FormEvent,useState} from 'react';
 import {getSupabaseBrowserClient,safeNextPath,type PublicSupabaseConfig} from '@/lib/supabase-browser';
+import PasswordField from '../PasswordField';
 import {PRIVACY_VERSION,TERMS_VERSION} from '@/lib/supabase-accounts';
 
 type Mode='login'|'register'|'forgot';
@@ -95,8 +96,8 @@ export default function AuthPortal({config}: {config:PublicSupabaseConfig}){
       <form className="auth-form" onSubmit={submit}>
         {mode==='register'&&<label>Name<input required autoComplete="name" value={displayName} onChange={event=>setDisplayName(event.target.value)} maxLength={80}/></label>}
         <label>E-Mail-Adresse<input required type="email" autoComplete="email" inputMode="email" value={email} onChange={event=>setEmail(event.target.value)} /></label>
-        {mode!=='forgot'&&<label>Passwort<input required type="password" autoComplete={mode==='login'?'current-password':'new-password'} value={password} onChange={event=>setPassword(event.target.value)} /></label>}
-        {mode==='register'&&<><p className={'password-hint '+(strongPassword(password)?'valid':'')}>Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.</p><label>Passwort wiederholen<input required type="password" autoComplete="new-password" value={passwordRepeat} onChange={event=>setPasswordRepeat(event.target.value)} /></label><label className="auth-check"><input type="checkbox" checked={accepted} onChange={event=>setAccepted(event.target.checked)}/><span>Ich akzeptiere die <a href="/rechtliches" target="_blank">Nutzungs- und Datenschutzhinweise</a>.</span></label></>}
+        {mode!=='forgot'&&<PasswordField label="Passwort" required autoComplete={mode==='login'?'current-password':'new-password'} value={password} onChange={setPassword}/>}
+        {mode==='register'&&<><p className={'password-hint '+(strongPassword(password)?'valid':'')}>Mindestens 12 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Sonderzeichen.</p><PasswordField label="Passwort wiederholen" required autoComplete="new-password" value={passwordRepeat} onChange={setPasswordRepeat}/><label className="auth-check"><input type="checkbox" checked={accepted} onChange={event=>setAccepted(event.target.checked)}/><span>Ich akzeptiere die <a href="/rechtliches" target="_blank">Nutzungs- und Datenschutzhinweise</a>.</span></label></>}
         <button className="auth-submit" disabled={busy||!config.configured}>{busy?'Bitte warten …':mode==='login'?'Anmelden':mode==='register'?'Bestätigungs-E-Mail senden':'Link anfordern'}</button>
       </form>
       <div className="auth-actions">{mode==='login'&&<button type="button" onClick={()=>switchMode('forgot')}>Passwort vergessen?</button>}{mode==='forgot'&&<button type="button" onClick={()=>switchMode('login')}>Zurück zur Anmeldung</button>}{mode==='register'&&<button type="button" disabled={busy} onClick={resend}>Bestätigungs-E-Mail erneut senden</button>}</div>
