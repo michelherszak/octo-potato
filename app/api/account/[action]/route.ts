@@ -21,43 +21,43 @@ export async function POST(request: Request, {params}: {params: Promise<{action:
   try { form = await smallForm(request); } catch { return accountJson({detail: 'Ungültiges Formular.'}, 400); }
   if (action === 'request-link') {
     const signup = accountConfig();
-    if (!signup) return accountRedirect(base, '/konto?status=unavailable');
+    if (!signup) return accountRedirect(base, '/konto/updates?status=unavailable');
     const parsed = emailSchema.safeParse(form.get('email'));
-    if (!parsed.success) return accountRedirect(base, '/konto?status=invalid-email');
+    if (!parsed.success) return accountRedirect(base, '/konto/updates?status=invalid-email');
     try {
       const requested=form.get('ticker')||'';
       const ticker=requested&&(await companyCatalog()).some(c=>c.ticker===requested)?requested:undefined;
       if (!form.get('website')) await requestEmailLink(db, parsed.data, request.headers.get('cf-connecting-ip') || 'unknown', secret, base, signup.send,Date.now(),ticker);
-      return accountRedirect(base, '/konto?status=sent');
-    } catch { return accountRedirect(base, '/konto?status=unavailable'); }
+      return accountRedirect(base, '/konto/updates?status=sent');
+    } catch { return accountRedirect(base, '/konto/updates?status=unavailable'); }
   }
   if (action === 'verify') {
     const pending=await loginTokenAccount(db,form.get('token')||'');
     const token = await verifyEmailLink(db, form.get('token') || '');
-    return token ? accountRedirect(base, '/konto?status=verified'+(pending?.requested_ticker?'&ticker='+encodeURIComponent(pending.requested_ticker):''), sessionCookie(token, base))
-      : accountRedirect(base, '/konto?status=expired');
+    return token ? accountRedirect(base, '/konto/updates?status=verified'+(pending?.requested_ticker?'&ticker='+encodeURIComponent(pending.requested_ticker):''), sessionCookie(token, base))
+      : accountRedirect(base, '/konto/updates?status=expired');
   }
   const session = readSession(request);
   const account = await sessionAccount(db, session);
-  if (!account || !session) return accountRedirect(base, '/konto?status=login-required', sessionCookie('', base, true));
+  if (!account || !session) return accountRedirect(base, '/konto/updates?status=login-required', sessionCookie('', base, true));
   if (action === 'pause') {
     await pauseEmails(db,account.id);
-    return accountRedirect(base,'/konto?status=paused');
+    return accountRedirect(base,'/konto/updates?status=paused');
   }
   if (action === 'logout') {
     await db.prepare('DELETE FROM account_sessions WHERE token_hash=?').bind(await hashToken(session)).run();
-    return accountRedirect(base, '/konto?status=logged-out', sessionCookie('', base, true));
+    return accountRedirect(base, '/konto/updates?status=logged-out', sessionCookie('', base, true));
   }
   if (action === 'delete') {
-    if (form.get('confirm') !== 'delete') return accountRedirect(base, '/konto?status=invalid');
+    if (form.get('confirm') !== 'delete') return accountRedirect(base, '/konto/updates?status=invalid');
     await db.prepare('DELETE FROM subscribers WHERE id=?').bind(account.id).run();
-    return accountRedirect(base, '/konto?status=deleted', sessionCookie('', base, true));
+    return accountRedirect(base, '/konto/updates?status=deleted', sessionCookie('', base, true));
   }
   const catalog = await companyCatalog();
   const input = {generalNews: form.get('generalNews') === 'on', tickers: form.getAll('tickers'), consent: form.get('consent') === 'on'};
   try { await savePreferences(db, account.id, input, catalog.map(company => company.ticker)); }
-  catch { return accountRedirect(base, '/konto?status=invalid'); }
-  return accountRedirect(base, '/konto?status=saved');
+  catch { return accountRedirect(base, '/konto/updates?status=invalid'); }
+  return accountRedirect(base, '/konto/updates?status=saved');
 }
 
 export async function GET() {
