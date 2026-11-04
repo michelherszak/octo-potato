@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isAdminEmail,parsePageView} from '../lib/analytics.ts';
+import {buildVisitorFunnel,isAdminEmail,parsePageView,routePattern} from '../lib/analytics.ts';
 
 test('analytics accepts only pseudonymous same-site page data',()=>{
   const valid=parsePageView({visitorId:'f5bb0bd6-7047-4bb8-ae24-7d8f13c27af8',path:'/themen/ki',title:'Künstliche Intelligenz'});
@@ -15,4 +15,48 @@ test('admin allowlist is case-insensitive and local fallback stays bounded',()=>
   assert.equal(isAdminEmail('other@example.com','admin@example.com'),false);
   assert.equal(isAdminEmail('seedy@sites.test',undefined,true),true);
   assert.equal(isAdminEmail('seedy@sites.test','admin@example.com',true),false);
+});
+
+test('page paths collapse into route patterns for the visitor flow',()=>{
+  assert.equal(routePattern('/'),'/');
+  assert.equal(routePattern('/unternehmen/ARQQ'),'/unternehmen/:ticker');
+  assert.equal(routePattern('/unternehmen'),'/unternehmen');
+  assert.equal(routePattern('/analysen/mein-memo?q=1'),'/analysen/:slug');
+  assert.equal(routePattern('/themen/ki#top'),'/themen/:thema');
+  assert.equal(routePattern('/konto/updates'),'/konto/updates');
+});
+
+test('the visitor flow splits sessions, counts entries and attributes drop-offs',()=>{
+  const minute=60_000;
+  const rows=[
+    // Besuch 1: Einstieg Katalog, eine Unternehmensseite, dann Absprung.
+    {visitor_id:'a',path:'/',visited_at:1_000},
+    {visitor_id:'a',path:'/unternehmen/ARQQ',visited_at:1_000+minute},
+    // Besuch 2 derselben Person nach langer Pause: Einstieg Katalog, direkter Absprung.
+    {visitor_id:'a',path:'/',visited_at:1_000+(90*minute)},
+    // Besuch 3: Einstieg über eine Analyse, danach Absprung.
+    {visitor_id:'b',path:'/analysen/memo-eins',visited_at:2_000},
+  ];
+  const funnel=buildVisitorFunnel(rows);
+  assert.equal(funnel.sessions,3);
+  const entries=funnel.nodes.filter(node=>node.step===0);
+  assert.deepEqual(entries.map(node=>[node.label,node.sessions]),[['/',2],['/analysen/:slug',1]]);
+  // Zwei von drei Besuchen enden auf der ersten Seite.
+  assert.equal(funnel.exits.find(exit=>exit.step===0)?.sessions,2);
+  assert.equal(funnel.exits.find(exit=>exit.step===1)?.sessions,1);
+  const continued=funnel.links.filter(link=>link.kind==='continue');
+  assert.equal(continued.length,1);
+  assert.equal(continued[0].sessions,1);
+  assert.equal(funnel.nodes.filter(node=>node.step===1).length,1);
+});
+
+test('repeated reloads of one page do not inflate the flow',()=>{
+  const funnel=buildVisitorFunnel([
+    {visitor_id:'a',path:'/',visited_at:1},
+    {visitor_id:'a',path:'/?q=chips',visited_at:2},
+    {visitor_id:'a',path:'/',visited_at:3},
+  ]);
+  assert.equal(funnel.sessions,1);
+  assert.equal(funnel.nodes.length,1);
+  assert.equal(funnel.exits.find(exit=>exit.step===0)?.sessions,1);
 });
