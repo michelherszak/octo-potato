@@ -80,6 +80,10 @@
 .flow-label{font-size:11px;fill:var(--ink)}
 .flow-label.is-exit{fill:var(--muted)}
 .flow-value{font-weight:700;fill:var(--muted)}
+.flow-dwell{fill:var(--muted)}
+.flow-dwell.is-fast{fill:var(--teal);font-weight:700}
+.flow-node.is-fast{stroke:var(--teal);stroke-dasharray:3 2}
+.flow-swatch.is-fast{background:var(--paper);border:2px dashed var(--teal)}
 .flow-tooltip{position:fixed;transform:translate(14px,-50%);z-index:5;display:grid;gap:2px;border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:7px 9px;font-size:11px;box-shadow:0 8px 24px rgb(32 32 43 / .12);pointer-events:none}
 .flow-tooltip strong{font-size:12px}
 .flow-tooltip span{color:var(--muted)}

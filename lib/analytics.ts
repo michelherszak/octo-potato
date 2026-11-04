@@ -64,16 +64,14 @@ export async function getAnalyticsDashboard(db:D1Database,now=Date.now()):Promis
 export const FUNNEL_STEPS=4;
 export const FUNNEL_BRANCHES=4;
 export const SESSION_GAP_MS=30*60_000;
+export const FAST_VIEW_MS=10_000;
 
-export type FunnelNode={id:string;step:number;label:string;sessions:number};
-export type FunnelLink={from:string;to:string;sessions:number;kind:'continue'|'exit'};
-export type VisitorFunnel={
-  sessions:number;
-  steps:number;
-  nodes:FunnelNode[];
-  links:FunnelLink[];
-  exits:Array<{step:number;sessions:number}>;
+export type FunnelNode={
+  id:string;step:number;label:string;sessions:number;kind:'page'|'exit';
+  source:string|null;medianDwellMs:number|null;measured:number;fast:number;
 };
+export type FunnelLink={from:string;to:string;sessions:number;kind:'continue'|'exit'};
+export type VisitorFunnel={sessions:number;steps:number;nodes:FunnelNode[];links:FunnelLink[]};
 
 // Einzelne Kürzel und Slugs würden den Trichter zersplittern, deshalb Routenmuster.
 export function routePattern(path:string){
@@ -86,6 +84,13 @@ export function routePattern(path:string){
   return '/'+segments.slice(0,2).join('/');
 }
 
+function median(values:number[]){
+  if(!values.length)return null;
+  const sorted=[...values].sort((a,b)=>a-b);
+  const middle=Math.floor(sorted.length/2);
+  return sorted.length%2?sorted[middle]:Math.round((sorted[middle-1]+sorted[middle])/2);
+}
+
 // Aufeinanderfolgende Aufrufe eines Besuchers mit großer Pause sind getrennte Besuche.
 export function buildVisitorFunnel(
   rows:Array<{visitor_id:string;path:string;visited_at:number}>,
@@ -93,13 +98,14 @@ export function buildVisitorFunnel(
   branches=FUNNEL_BRANCHES,
 ):VisitorFunnel{
   const ordered=[...rows].sort((a,b)=>a.visitor_id===b.visitor_id?Number(a.visited_at)-Number(b.visited_at):(a.visitor_id<b.visitor_id?-1:1));
-  const journeys:string[][]=[];
-  let current:string[]|null=null;let lastVisitor='';let lastAt=0;
+  type Stop={pattern:string;at:number};
+  const journeys:Stop[][]=[];
+  let current:Stop[]|null=null;let lastVisitor='';let lastAt=0;
   for(const row of ordered){
     const at=Number(row.visited_at);
     const pattern=routePattern(row.path);
     if(!current||row.visitor_id!==lastVisitor||at-lastAt>SESSION_GAP_MS){current=[];journeys.push(current);}
-    if(current[current.length-1]!==pattern)current.push(pattern);
+    if(current[current.length-1]?.pattern!==pattern)current.push({pattern,at});
     lastVisitor=row.visitor_id;lastAt=at;
   }
   const kept=journeys.filter(journey=>journey.length);
@@ -107,33 +113,45 @@ export function buildVisitorFunnel(
   const allowed:Array<Set<string>>=[];
   for(let step=0;step<steps;step++){
     const counts=new Map<string,number>();
-    for(const journey of kept)if(journey[step])counts.set(journey[step],(counts.get(journey[step])||0)+1);
+    for(const journey of kept)if(journey[step])counts.set(journey[step].pattern,(counts.get(journey[step].pattern)||0)+1);
     allowed.push(new Set([...counts.entries()].sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1)).slice(0,branches).map(([path])=>path)));
   }
-  const label=(step:number,journey:string[])=>allowed[step].has(journey[step])?journey[step]:'Andere Seiten';
-  const nodeCounts=new Map<string,FunnelNode>();
-  const linkCounts=new Map<string,FunnelLink>();
-  const exits=new Map<number,number>();
-  const nodeId=(step:number,name:string)=>step+'|'+name;
+  const label=(step:number,journey:Stop[])=>allowed[step].has(journey[step].pattern)?journey[step].pattern:'Andere Seiten';
+  const nodes=new Map<string,FunnelNode>();
+  const dwells=new Map<string,number[]>();
+  const links=new Map<string,FunnelLink>();
+  const pageId=(step:number,name:string)=>step+'|'+name;
+  const exitId=(step:number,name:string)=>'exit|'+step+'|'+name;
+  const touch=(id:string,step:number,label:string,kind:'page'|'exit',source:string|null)=>{
+    const node=nodes.get(id)||{id,step,label,sessions:0,kind,source,medianDwellMs:null,measured:0,fast:0};
+    node.sessions+=1;nodes.set(id,node);return node;
+  };
   for(const journey of kept){
     for(let step=0;step<steps&&journey[step];step++){
       const name=label(step,journey);
-      const id=nodeId(step,name);
-      const node=nodeCounts.get(id)||{id,step,label:name,sessions:0};
-      node.sessions+=1;nodeCounts.set(id,node);
-      const continues=Boolean(journey[step+1])&&step+1<steps;
-      const to=continues?nodeId(step+1,label(step+1,journey)):'exit|'+step;
+      const id=pageId(step,name);
+      const node=touch(id,step,name,'page',null);
+      const next=journey[step+1];
+      // Die letzte Seite eines Besuchs hat keine messbare Verweildauer.
+      if(next){
+        const dwell=next.at-journey[step].at;
+        node.measured+=1;
+        if(dwell<FAST_VIEW_MS)node.fast+=1;
+        dwells.set(id,[...(dwells.get(id)||[]),dwell]);
+      }
+      const continues=Boolean(next)&&step+1<steps;
+      const to=continues?pageId(step+1,label(step+1,journey)):exitId(step+1,name);
+      if(!continues)touch(to,step+1,name,'exit',name);
       const key=id+'>'+to;
-      const link=linkCounts.get(key)||{from:id,to,sessions:0,kind:continues?'continue' as const:'exit' as const};
-      link.sessions+=1;linkCounts.set(key,link);
-      if(!continues)exits.set(step,(exits.get(step)||0)+1);
+      const link=links.get(key)||{from:id,to,sessions:0,kind:continues?'continue' as const:'exit' as const};
+      link.sessions+=1;links.set(key,link);
     }
   }
+  for(const node of nodes.values())node.medianDwellMs=median(dwells.get(node.id)||[]);
   return {
     sessions:kept.length,
     steps,
-    nodes:[...nodeCounts.values()].sort((a,b)=>a.step-b.step||b.sessions-a.sessions||(a.label<b.label?-1:1)),
-    links:[...linkCounts.values()].sort((a,b)=>b.sessions-a.sessions),
-    exits:[...exits.entries()].sort((a,b)=>a[0]-b[0]).map(([step,sessions])=>({step,sessions})),
+    nodes:[...nodes.values()].sort((a,b)=>a.step-b.step||Number(a.kind==='exit')-Number(b.kind==='exit')||b.sessions-a.sessions||(a.label<b.label?-1:1)),
+    links:[...links.values()].sort((a,b)=>b.sessions-a.sessions),
   };
 }

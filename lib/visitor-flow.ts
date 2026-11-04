@@ -5,13 +5,12 @@ export const HEIGHT=420;
 const PAD={top:34,bottom:26,left:8,right:188};
 export const NODE_WIDTH=13;
 const NODE_GAP=2;
-const EXIT='exit';
 
-export type Box={id:string;label:string;column:number;sessions:number;x:number;y:number;height:number;isExit:boolean};
+export type Box={id:string;label:string;column:number;sessions:number;x:number;y:number;height:number;isExit:boolean;medianDwellMs:number|null;fastShare:number|null};
 export type Ribbon={id:string;path:string;sessions:number;kind:'continue'|'exit';from:string;to:string};
 
+export const seconds=(ms:number)=>ms>=60_000?Math.round(ms/60_000)+' min':Math.max(1,Math.round(ms/1000))+' s';
 export const percent=(part:number,whole:number)=>whole?Math.round((part/whole)*100)+' %':'0 %';
-export const exitLabel=(step:number)=>'Absprung nach Seite '+(step+1);
 
 export function layout(funnel:VisitorFunnel){
   const columns=funnel.steps+1;
@@ -19,19 +18,19 @@ export function layout(funnel:VisitorFunnel){
   const plotHeight=HEIGHT-PAD.top-PAD.bottom;
   const boxes:Box[]=[];
   for(let column=0;column<columns;column++){
-    const pages=funnel.nodes.filter(node=>node.step===column);
-    const exitSessions=funnel.exits.find(exit=>exit.step===column-1)?.sessions||0;
-    const entries=[
-      ...pages.map(node=>({id:node.id,label:node.label,sessions:node.sessions,isExit:false})),
-      ...(exitSessions?[{id:EXIT+'|'+(column-1),label:exitLabel(column-1),sessions:exitSessions,isExit:true}]:[]),
-    ];
+    const entries=funnel.nodes.filter(node=>node.step===column);
     const total=entries.reduce((sum,entry)=>sum+entry.sessions,0);
     const gaps=NODE_GAP*Math.max(0,entries.length-1);
     const scale=total?(plotHeight-gaps)/total:0;
     let y=PAD.top;
     for(const entry of entries){
       const height=Math.max(3,entry.sessions*scale);
-      boxes.push({...entry,column,x:PAD.left+column*columnWidth,y,height});
+      boxes.push({
+        id:entry.id,label:entry.kind==='exit'?'Absprung: '+entry.label:entry.label,
+        column,sessions:entry.sessions,x:PAD.left+column*columnWidth,y,height,
+        isExit:entry.kind==='exit',medianDwellMs:entry.medianDwellMs,
+        fastShare:entry.measured?entry.fast/entry.measured:null,
+      });
       y+=height+NODE_GAP;
     }
   }

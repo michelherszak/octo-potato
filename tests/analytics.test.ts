@@ -26,12 +26,13 @@ test('page paths collapse into route patterns for the visitor flow',()=>{
   assert.equal(routePattern('/konto/updates'),'/konto/updates');
 });
 
-test('the visitor flow splits sessions, counts entries and attributes drop-offs',()=>{
+test('the visitor flow splits sessions, names the exit page and measures dwell time',()=>{
   const minute=60_000;
+  const exits=(funnel:ReturnType<typeof buildVisitorFunnel>)=>funnel.nodes.filter(node=>node.kind==='exit');
   const rows=[
-    // Besuch 1: Einstieg Katalog, eine Unternehmensseite, dann Absprung.
+    // Besuch 1: Einstieg Katalog, nach 2 Minuten eine Unternehmensseite, dann Absprung.
     {visitor_id:'a',path:'/',visited_at:1_000},
-    {visitor_id:'a',path:'/unternehmen/ARQQ',visited_at:1_000+minute},
+    {visitor_id:'a',path:'/unternehmen/ARQQ',visited_at:1_000+(2*minute)},
     // Besuch 2 derselben Person nach langer Pause: Einstieg Katalog, direkter Absprung.
     {visitor_id:'a',path:'/',visited_at:1_000+(90*minute)},
     // Besuch 3: Einstieg über eine Analyse, danach Absprung.
@@ -41,13 +42,29 @@ test('the visitor flow splits sessions, counts entries and attributes drop-offs'
   assert.equal(funnel.sessions,3);
   const entries=funnel.nodes.filter(node=>node.step===0);
   assert.deepEqual(entries.map(node=>[node.label,node.sessions]),[['/',2],['/analysen/:slug',1]]);
-  // Zwei von drei Besuchen enden auf der ersten Seite.
-  assert.equal(funnel.exits.find(exit=>exit.step===0)?.sessions,2);
-  assert.equal(funnel.exits.find(exit=>exit.step===1)?.sessions,1);
+  // Absprünge tragen den Namen der Seite, auf der sie passieren.
+  assert.deepEqual(exits(funnel).filter(node=>node.step===1).map(node=>[node.label,node.sessions]).sort(),[['/',1],['/analysen/:slug',1]]);
+  assert.deepEqual(exits(funnel).filter(node=>node.step===2).map(node=>[node.label,node.sessions]),[['/unternehmen/:ticker',1]]);
   const continued=funnel.links.filter(link=>link.kind==='continue');
   assert.equal(continued.length,1);
-  assert.equal(continued[0].sessions,1);
-  assert.equal(funnel.nodes.filter(node=>node.step===1).length,1);
+  // Nur die Seite mit einem Folgeaufruf hat eine messbare Verweildauer.
+  const katalog=entries.find(node=>node.label==='/')!;
+  assert.equal(katalog.measured,1);
+  assert.equal(katalog.medianDwellMs,2*minute);
+  assert.equal(entries.find(node=>node.label==='/analysen/:slug')!.medianDwellMs,null);
+});
+
+test('short visits before leaving are counted as fast bounces',()=>{
+  const rows=[];
+  // Vier Besuche verlassen die Einstiegsseite nach fünf Sekunden, einer bleibt lange.
+  for(let i=0;i<4;i++)rows.push({visitor_id:'f'+i,path:'/',visited_at:i*600_000},{visitor_id:'f'+i,path:'/login',visited_at:i*600_000+5_000});
+  rows.push({visitor_id:'slow',path:'/',visited_at:9_000_000},{visitor_id:'slow',path:'/login',visited_at:9_000_000+120_000});
+  const funnel=buildVisitorFunnel(rows);
+  const entry=funnel.nodes.find(node=>node.step===0)!;
+  assert.equal(entry.sessions,5);
+  assert.equal(entry.measured,5);
+  assert.equal(entry.fast,4);
+  assert.equal(entry.medianDwellMs,5_000);
 });
 
 test('repeated reloads of one page do not inflate the flow',()=>{
@@ -57,6 +74,6 @@ test('repeated reloads of one page do not inflate the flow',()=>{
     {visitor_id:'a',path:'/',visited_at:3},
   ]);
   assert.equal(funnel.sessions,1);
-  assert.equal(funnel.nodes.length,1);
-  assert.equal(funnel.exits.find(exit=>exit.step===0)?.sessions,1);
+  assert.equal(funnel.nodes.filter(node=>node.kind==='page').length,1);
+  assert.deepEqual(funnel.nodes.filter(node=>node.kind==='exit').map(node=>node.label),['/']);
 });
