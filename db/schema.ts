@@ -80,3 +80,46 @@ export const emailSendBudget = sqliteTable('email_send_budget', {
   key: text('key').primaryKey(),
   day: integer('day').notNull(),
 }, table => [index('email_budget_day').on(table.day)]);
+
+export const userProfiles = sqliteTable('user_profiles', {
+  userId: text('user_id').primaryKey(),
+  email: text('email').notNull(),
+  displayName: text('display_name').notNull(),
+  avatarPath: text('avatar_path'),
+  role: text('role').notNull().default('user'),
+  status: text('status').notNull().default('active'),
+  emailVerifiedAt: integer('email_verified_at').notNull(),
+  termsAcceptedAt: integer('terms_accepted_at'),
+  termsVersion: text('terms_version'),
+  privacyAcceptedAt: integer('privacy_accepted_at'),
+  privacyVersion: text('privacy_version'),
+  createdAt: integer('created_at').notNull(),
+  updatedAt: integer('updated_at').notNull(),
+  lastLoginAt: integer('last_login_at').notNull(),
+  deletedAt: integer('deleted_at'),
+}, table => [
+  uniqueIndex('user_profiles_email').on(table.email),
+  index('user_profiles_role_status').on(table.role, table.status),
+  index('user_profiles_last_login').on(table.lastLoginAt),
+]);
+
+export const authAuditLog = sqliteTable('auth_audit_log', {
+  id: integer('id').primaryKey({autoIncrement:true}),
+  userId: text('user_id'),
+  event: text('event').notNull(),
+  detail: text('detail').notNull().default(''),
+  createdAt: integer('created_at').notNull(),
+}, table => [
+  index('auth_audit_log_user').on(table.userId),
+  index('auth_audit_log_created_at').on(table.createdAt),
+]);
+
+export const companyFollows = sqliteTable('company_follows', {
+  userId: text('user_id').notNull(),
+  ticker: text('ticker').notNull(),
+  createdAt: integer('created_at').notNull(),
+}, table => [
+  primaryKey({columns:[table.userId,table.ticker]}),
+  index('company_follows_user').on(table.userId),
+  index('company_follows_ticker').on(table.ticker),
+]);

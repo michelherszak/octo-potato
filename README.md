@@ -24,6 +24,10 @@ cp .env.example .dev.vars
 
 In `.dev.vars` einen zufälligen `PUBLISH_TOKEN` mit mindestens 32 Zeichen eintragen. Das ist derselbe Veröffentlichungsschlüssel wie im privaten Publisher. `.dev.vars` bleibt außerhalb von Git.
 
+Die Einrichtung der E-Mail-/Passwort-Konten mit Supabase Auth ist in
+[`docs/supabase-auth.md`](docs/supabase-auth.md) beschrieben. E-Mail-Bestätigung und
+eigenes SMTP sind vor einem öffentlichen Start verpflichtend.
+
 ```sh
 npm run build
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_familiar_darwin.sql

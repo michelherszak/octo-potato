@@ -10,6 +10,9 @@ declare namespace Cloudflare {
     SITE_URL?: string;
     SITE_INDEXABLE?: string;
     ADMIN_EMAILS?: string;
+    SUPABASE_URL?: string;
+    SUPABASE_PUBLISHABLE_KEY?: string;
+    SUPABASE_SERVICE_ROLE_KEY?: string;
     DB?: D1Database;
     BUCKET?: R2Bucket;
   }
