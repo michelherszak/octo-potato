@@ -5,6 +5,16 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    // Diese Website läuft auf vinext (Vite), nicht auf dem Next-Server. Die
+    // Client-Navigation von `next/link` bricht dort zur Laufzeit
+    // ("TypeError: e is not a function" in startTransition), deshalb verlinkt
+    // das Projekt bewusst mit einfachen <a>-Elementen.
+    rules: {
+      "@next/next/no-html-link-for-pages": "off",
+      "@next/next/no-location-assign-relative-destination": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

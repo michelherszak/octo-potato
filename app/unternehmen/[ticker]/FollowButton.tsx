@@ -1,11 +1,9 @@
 'use client';
 
 import {useEffect,useState} from 'react';
-import {useRouter} from 'next/navigation';
 import {getSupabaseBrowserClient,type PublicSupabaseConfig} from '@/lib/supabase-browser';
 
 export default function FollowButton({ticker,company,config}:{ticker:string;company:string;config:PublicSupabaseConfig}){
-  const router=useRouter();
   const [followed,setFollowed]=useState(false);
   const [ready,setReady]=useState(false);
   const [busy,setBusy]=useState(false);
@@ -23,13 +21,13 @@ export default function FollowButton({ticker,company,config}:{ticker:string;comp
   async function toggle(){
     setError('');
     const next='/unternehmen/'+encodeURIComponent(ticker);
-    if(!config.configured){router.push('/login?next='+encodeURIComponent(next));return;}
+    if(!config.configured){location.assign('/login?next='+encodeURIComponent(next));return;}
     const supabase=getSupabaseBrowserClient(config);
     const {data}=await supabase.auth.getSession();
-    if(!data.session){router.push('/login?next='+encodeURIComponent(next));return;}
+    if(!data.session){location.assign('/login?next='+encodeURIComponent(next));return;}
     setBusy(true);
     const response=await fetch('/api/follows',{method:followed?'DELETE':'POST',headers:{'content-type':'application/json',authorization:'Bearer '+data.session.access_token},body:JSON.stringify({ticker})});
-    if(response.status===401){await supabase.auth.signOut({scope:'local'});router.push('/login?next='+encodeURIComponent(next));return;}
+    if(response.status===401){await supabase.auth.signOut({scope:'local'});location.assign('/login?next='+encodeURIComponent(next));return;}
     const payload=await response.json().catch(()=>null) as {followed?:boolean;detail?:string}|null;
     if(!response.ok||typeof payload?.followed!=='boolean')setError(payload?.detail||'Die Auswahl konnte nicht gespeichert werden.');
     else setFollowed(payload.followed);
