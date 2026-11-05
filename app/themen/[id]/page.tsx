@@ -1,9 +1,10 @@
 import {notFound} from 'next/navigation';
+import {pageMetadata} from '@/lib/seo';
 import {topics} from '@/lib/catalog';
 import {allArticles,companyCatalog} from '@/lib/content';
 import {ArticleRow,Tags} from '../../components';
 export const dynamic='force-dynamic';
-export async function generateMetadata({params}:{params:Promise<{id:string}>}){const {id}=await params;const t=topics.find(t=>t.id===id);return {title:(t?.name||'Thema')+' – TechThese',description:t?.description};}
+export async function generateMetadata({params}:{params:Promise<{id:string}>}){const {id}=await params;const t=topics.find(t=>t.id===id);return pageMetadata({path:'/themen/'+id,title:(t?.name||'Thema')+' – TechThese',description:t?.description});}
 export default async function Topic({params}:{params:Promise<{id:string}>}) {
   const {id}=await params;const t=topics.find(t=>t.id===id);if(!t)notFound();
   const catalog=await companyCatalog();const articles=(await allArticles()).filter(a=>a.topics.includes(id));

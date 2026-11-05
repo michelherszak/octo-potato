@@ -1,6 +1,7 @@
 import {accountStorageConfig} from '@/lib/account-runtime';
 import {equalTokens, TOKEN_PATTERN, unsubscribeSignature} from '@/lib/accounts';
 
+export const metadata={title:'Updates abbestellen – TechThese',robots:{index:false,follow:false}};
 export default async function Unsubscribe({searchParams}: {searchParams: Promise<{id?: string; signature?: string; result?: string}>}) {
   const {id = '', signature = '', result} = await searchParams;
   const config = accountStorageConfig();

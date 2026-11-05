@@ -1,6 +1,7 @@
 import {accountStorageConfig} from '@/lib/account-runtime';
 import {loginTokenAccount} from '@/lib/accounts';
 
+export const metadata={title:'Zugang bestätigen – TechThese',robots:{index:false,follow:false}};
 export default async function ConfirmEmail({searchParams}: {searchParams: Promise<{token?: string}>}) {
   const {token = ''} = await searchParams;
   const config = accountStorageConfig();

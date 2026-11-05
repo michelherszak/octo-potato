@@ -4,6 +4,7 @@ import {SESSION_COOKIE, sessionAccount, selectedTickers} from '@/lib/accounts';
 import {companyCatalog} from '@/lib/content';
 import Preferences from '../Preferences';
 
+export const metadata={title:'E-Mail-Updates – TechThese',robots:{index:false,follow:false}};
 const messages: Record<string, string> = {
   sent: 'Bitte prüfe dein E-Mail-Postfach und den Spamordner. Wenn der Versand möglich ist, erhältst du einen Link. Häufige Anfragen werden begrenzt. Der Link ist 15 Minuten gültig.',
   verified: 'Deine E-Mail-Adresse ist bestätigt. Wähle jetzt deine Updates aus.',

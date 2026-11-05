@@ -3,9 +3,10 @@ import {topics} from '@/lib/catalog';
 import {ArticleRow,Icon} from '../components';
 import SearchExplorer from '../SearchExplorer';
 import {buildSearchEntries,matchesArticle,matchesCompany,matchingTopics} from '@/lib/search';
+import {pageMetadata} from '@/lib/seo';
 
 export const dynamic='force-dynamic';
-export const metadata={title:'Themen entdecken – TechThese',description:'Analysen, Memos und Unternehmen nach Technologiethemen entdecken.'};
+export const metadata=pageMetadata({path:'/entdecken',title:'Themen entdecken – TechThese',description:'Analysen, Memos und Unternehmen nach Technologiethemen entdecken.'});
 
 export default async function Discover({searchParams}:{searchParams:Promise<{q?:string;thema?:string}>}) {
   const {q='',thema=''}=await searchParams;
