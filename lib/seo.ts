@@ -2,7 +2,7 @@ import {siteUrl} from './content.ts';
 
 export const SITE_NAME='TechThese';
 
-export function canonicalUrl(path:string){return new URL(path,siteUrl()).href;}
+function canonicalUrl(path:string){return new URL(path,siteUrl()).href;}
 
 // Suchparameter wie ?q= erzeugen sonst beliebig viele Adressen mit gleichem Inhalt.
 export function pageMetadata({path,title,description,noindex=false}:{path:string;title:string;description?:string;noindex?:boolean}){

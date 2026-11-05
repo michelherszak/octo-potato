@@ -6,8 +6,8 @@ const pageViewSchema=z.object({
   title:z.string().trim().max(240).default(''),
 }).strict();
 
-export type PageViewEvent=z.infer<typeof pageViewSchema>;
-export const ANALYTICS_RETENTION_DAYS=180;
+type PageViewEvent=z.infer<typeof pageViewSchema>;
+const ANALYTICS_RETENTION_DAYS=180;
 
 export function parsePageView(value:unknown){return pageViewSchema.safeParse(value);}
 
@@ -61,16 +61,16 @@ export async function getAnalyticsDashboard(db:D1Database,now=Date.now()):Promis
   };
 }
 
-export const FUNNEL_STEPS=4;
-export const FUNNEL_BRANCHES=4;
-export const SESSION_GAP_MS=30*60_000;
-export const FAST_VIEW_MS=10_000;
+const FUNNEL_STEPS=4;
+const FUNNEL_BRANCHES=4;
+const SESSION_GAP_MS=30*60_000;
+const FAST_VIEW_MS=10_000;
 
-export type FunnelNode={
+type FunnelNode={
   id:string;step:number;label:string;sessions:number;kind:'page'|'exit';
   source:string|null;medianDwellMs:number|null;measured:number;fast:number;
 };
-export type FunnelLink={from:string;to:string;sessions:number;kind:'continue'|'exit'};
+type FunnelLink={from:string;to:string;sessions:number;kind:'continue'|'exit'};
 export type VisitorFunnel={sessions:number;steps:number;nodes:FunnelNode[];links:FunnelLink[]};
 
 // Einzelne Kürzel und Slugs würden den Trichter zersplittern, deshalb Routenmuster.

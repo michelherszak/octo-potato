@@ -43,6 +43,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
           </article>)}
         </div>
       </section>
+      <div className="index-rail">
       <aside className="latest-panel" aria-labelledby="neu-titel">
         <div className="section-title"><h2 id="neu-titel">Neu veröffentlicht</h2><span>{!latest.length?'Noch nichts erschienen':real.length?'Zuletzt erschienen':'Beispiele bis zur ersten Veröffentlichung'}</span></div>
         {latest.length?<ol className="latest-list">{latest.map(article=><li key={article.slug}>
@@ -54,6 +55,17 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
         </li>)}</ol>:<p className="muted">Sobald ein Beitrag freigegeben ist, erscheint er hier.</p>}
         <a className="read-link" href="/entdecken">Alle Themen und Beiträge ↗</a>
       </aside>
+      <aside className="ad-slot" aria-label="Werbeplatz">
+        <span className="ad-slot-label">Werbeplatz</span>
+        <div className="ad-slot-frame">
+          <div className="ad-slot-mark" aria-hidden="true"><span/><span/><span/></div>
+          <p className="ad-slot-eyebrow">Hier könnte deine Marke stehen</p>
+          <h2>Wir würden dich hier gerne zeigen.</h2>
+          <p className="ad-slot-copy">Dieser Platz erreicht Leserinnen und Leser, die Technologie und Unternehmen verstehen wollen. Noch ist er frei.</p>
+          <a className="ad-slot-action" href="/rechtliches">Platz anfragen <span aria-hidden="true">↗</span></a>
+        </div>
+      </aside>
+      </div>
     </div>
   </main>;
 }
