@@ -26,14 +26,10 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
     <div className="index-layout">
       <section aria-labelledby="unternehmen-titel">
         <div className="section-title" id="unternehmen">
-          <h1 id="unternehmen-titel">{selected?'Unternehmen: '+selected.name:'Unternehmen'}</h1>
+          <h1 id="unternehmen-titel">Unternehmen</h1>
           <span>{catalog.length} {catalog.length===1?'Unternehmen':'Unternehmen'}<a className="topic-search-shortcut" href="/entdecken">Themen entdecken ↗</a></span>
         </div>
         {selected&&<div className="topic-selection"><span>Thema: <strong>{selected.short}</strong></span><a href="/#unternehmen">Auswahl zurücksetzen ↗</a></div>}
-        <div className="topic-filter-row" role="group" aria-label="Nach Thema eingrenzen">
-          <a aria-current={!selected?'page':undefined} href="/#unternehmen">Alle</a>
-          {topics.map(topic=><a key={topic.id} aria-current={selected?.id===topic.id?'page':undefined} href={'/?thema='+topic.id+'#unternehmen'}>{topic.short}</a>)}
-        </div>
         <div className="company-list">
           {!catalog.length&&<div className="search-empty">
             <h2>Hierzu haben wir noch kein Unternehmen in der Auswahl.</h2>
