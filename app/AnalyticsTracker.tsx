@@ -1,14 +1,8 @@
 'use client';
 
-import {useEffect,useState} from 'react';
+import {useEffect} from 'react';
 import {usePathname} from 'next/navigation';
-
-const CONSENT_KEY='techthese-analytics-consent';
-const VISITOR_KEY='techthese-visitor-id';
-const LAST_VIEW_KEY='techthese-last-pageview';
-const EXCLUDE_KEY='techthese-analytics-exclude';
-
-type Consent='unknown'|'accepted'|'rejected';
+import {CONSENT_KEY,EXCLUDE_KEY,LAST_VIEW_KEY,VISITOR_KEY,notifyFlagChange,useConsent,useExcluded} from './browser-flags';
 
 function visitorId(){
   const existing=localStorage.getItem(VISITOR_KEY);
@@ -20,18 +14,11 @@ function visitorId(){
 
 export default function AnalyticsTracker(){
   const pathname=usePathname();
-  const [consent,setConsent]=useState<Consent>('unknown');
-  const [excluded,setExcluded]=useState(false);
-
-  useEffect(()=>{
-    const saved=localStorage.getItem(CONSENT_KEY);
-    setConsent(saved==='accepted'?'accepted':saved==='rejected'?'rejected':'unknown');
-    setExcluded(localStorage.getItem(EXCLUDE_KEY)==='1');
-  },[]);
+  const consent=useConsent();
+  const excluded=useExcluded<false>(false);
 
   useEffect(()=>{
     if(consent!=='accepted'||excluded||!pathname||(pathname.startsWith('/admin')||pathname.startsWith('/konto')))return;
-    if(localStorage.getItem(EXCLUDE_KEY)==='1'){setExcluded(true);return;}
     const id=visitorId();
     const now=Date.now();
     let last:{key?:string;at?:number}|null=null;
@@ -48,7 +35,7 @@ export default function AnalyticsTracker(){
       localStorage.setItem(EXCLUDE_KEY,'1');
       localStorage.removeItem(VISITOR_KEY);
       sessionStorage.removeItem(LAST_VIEW_KEY);
-      setExcluded(true);
+      notifyFlagChange();
     }).catch(()=>{});
   },[consent,excluded,pathname]);
 
@@ -56,8 +43,8 @@ export default function AnalyticsTracker(){
   return <aside className="analytics-consent" aria-label="Einstellungen zur Besucherstatistik">
     <div><strong>Hilf uns, TechThese besser zu machen.</strong><p>Mit deiner Einwilligung zählen wir pseudonym, welche Seiten besucht werden. Keine Werbenetzwerke, keine IP-Speicherung. <a href="/rechtliches">Mehr erfahren</a></p></div>
     <div className="analytics-consent-actions">
-      <button type="button" className="consent-secondary" onClick={()=>{localStorage.setItem(CONSENT_KEY,'rejected');localStorage.removeItem(VISITOR_KEY);setConsent('rejected')}}>Nur notwendige</button>
-      <button type="button" onClick={()=>{localStorage.setItem(CONSENT_KEY,'accepted');setConsent('accepted')}}>Anonyme Statistik erlauben</button>
+      <button type="button" className="consent-secondary" onClick={()=>{localStorage.setItem(CONSENT_KEY,'rejected');localStorage.removeItem(VISITOR_KEY);notifyFlagChange();}}>Nur notwendige</button>
+      <button type="button" onClick={()=>{localStorage.setItem(CONSENT_KEY,'accepted');notifyFlagChange();}}>Anonyme Statistik erlauben</button>
     </div>
   </aside>;
 }
