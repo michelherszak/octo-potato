@@ -74,18 +74,18 @@
 @media (max-width:900px){.index-layout{grid-template-columns:1fr;gap:28px}.index-rail{position:static}}
 
 /* Freier Werbeplatz als einladender Platzhalter. */
-.ad-slot{display:block}
-.ad-slot-label{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
-.ad-slot-frame{position:relative;overflow:hidden;border:1.5px dashed var(--accent);border-radius:12px;padding:20px 18px;background:linear-gradient(150deg,var(--soft),var(--paper) 72%)}
-.ad-slot-mark{display:flex;gap:5px;margin-bottom:13px}
-.ad-slot-mark span{width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.9}
-.ad-slot-mark span:nth-child(2){opacity:.55}
-.ad-slot-mark span:nth-child(3){opacity:.25}
-.ad-slot-eyebrow{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--accent)}
-.ad-slot-frame h2{margin:0 0 8px;font-size:17px;line-height:1.25}
-.ad-slot-copy{margin:0 0 15px;font-size:12px;line-height:1.5;color:var(--muted)}
-.ad-slot-action{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:var(--accent);color:#fff;padding:8px 15px;font-size:12px;font-weight:700}
-.ad-slot-action:hover{filter:brightness(1.08)}
+.promo-card{display:block}
+.promo-card-label{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+.promo-card-frame{position:relative;overflow:hidden;border:1.5px dashed var(--accent);border-radius:12px;padding:20px 18px;background:linear-gradient(150deg,var(--soft),var(--paper) 72%)}
+.promo-card-mark{display:flex;gap:5px;margin-bottom:13px}
+.promo-card-mark span{width:9px;height:9px;border-radius:50%;background:var(--accent);opacity:.9}
+.promo-card-mark span:nth-child(2){opacity:.55}
+.promo-card-mark span:nth-child(3){opacity:.25}
+.promo-card-eyebrow{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--accent)}
+.promo-card-frame h2{margin:0 0 8px;font-size:17px;line-height:1.25}
+.promo-card-copy{margin:0 0 15px;font-size:12px;line-height:1.5;color:var(--muted)}
+.promo-card-action{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:var(--accent);color:#fff;padding:8px 15px;font-size:12px;font-weight:700}
+.promo-card-action:hover{filter:brightness(1.08)}
 /* Besuchsverlauf: ein Akzentton für "weiter", Grau für den Absprung. */
 .flow{display:grid;gap:14px}
 .flow-legend{display:flex;flex-wrap:wrap;align-items:center;gap:7px 18px;font-size:11px;color:var(--muted)}
