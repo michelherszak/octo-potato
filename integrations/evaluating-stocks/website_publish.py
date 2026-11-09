@@ -146,8 +146,9 @@ def export_article(run, editorial):
     e=editorial.model_dump() if isinstance(editorial,EditorialIn) else dict(editorial)
     for field in ('rights_basis', 'conflicts', 'advertising', 'advertising_details'):
         e.pop(field, None)
-    sources=[{'title':'Yahoo Finance – '+str(run.get('name') or ''),'url':'https://finance.yahoo.com/quote/'+str(run.get('yahoo_symbol') or run.get('ticker') or '')}]
-    sources.extend(e.pop('additional_sources',[]))
+    # Keine pauschale Quelle: zitiert wird, woher die Zahlen belegt stammen, plus was die
+    # Redaktion ergänzt. Eine feste Vorgabe wäre eine behauptete, keine belegte Herkunft.
+    sources=list(e.pop('additional_sources',[]))
     evidence=run.get('figure_evidence') or {}
     for url in sorted(set(_urls(evidence))):
         sources.append({'title':'Kennzahlenquelle · '+urlparse(url).hostname,'url':url})
@@ -179,7 +180,7 @@ def export_article(run, editorial):
             formatted=number(value)+ (' %' if unit=='%' else ' ×' if unit=='x' else '')
         urls=_urls(ev)
         original_source=str(ev.get('source') or '')
-        source_label='Yahoo Finance · gespeicherte Auswertung' if 'Yahoo' in original_source else 'SEC-Unternehmensbericht · gespeicherte Auswertung' if 'SEC' in original_source else 'Berechnung aus gespeicherten Quelldaten' if ev.get('kind')=='derived' else 'Detailherkunft in der Auswertung nicht dokumentiert'
+        source_label='Yahoo Finance · gespeicherte Auswertung' if any(mark in original_source.upper() for mark in ('YAHOO','YFINANCE')) else 'SEC-Unternehmensbericht · gespeicherte Auswertung' if 'SEC' in original_source else 'Berechnung aus gespeicherten Quelldaten' if ev.get('kind')=='derived' else 'Detailherkunft in der Auswertung nicht dokumentiert'
         metric={'key':key,'label':plain_memo.METRICS[key]['de'],'value':formatted,
                 'explanation':explanation,'period':str(ev.get('period_end') or 'Berichtszeitraum siehe Quelle; Auswertung '+run['created_at'][:10])[:150],
                 'source':source_label}
@@ -255,6 +256,7 @@ def push(run_id:str,body:PushIn):
     if body.target_url.rstrip('/') != url:raise HTTPException(409,'Website-Ziel hat sich geändert. Bitte den Entwurf erneut prüfen und freigeben.')
     if not settings.get('token'):raise HTTPException(400,'Veröffentlichungsschlüssel fehlt')
     article=export_article(run,body.editorial)
+    if not article.get('sources'):raise HTTPException(409,'Bitte mindestens eine Quelle angeben, aus der die Zahlen tatsächlich stammen.')
     review={key:getattr(body.editorial,key).strip() for key in ('rights_basis','conflicts','advertising','advertising_details')}
     review.update(reviewer=body.editorial.author.strip(),edited=True,facts_checked=True,commercial_rights_confirmed=True)
     fingerprint=hashlib.sha256(json.dumps({'article':article,'review':review,'notify_subscribers':body.notify_subscribers},sort_keys=True).encode()).hexdigest()

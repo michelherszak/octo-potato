@@ -67,6 +67,13 @@ def build_memo_overview(run):
                               'source': text(ev.get('source') or 'Gespeicherte Auswertung; Detailherkunft nicht dokumentiert', 500), **source_url(ev)})
     # Use the stored annual breakdown, never derive costs from revenue minus cashflow.
     pl = run.get('pl_breakdown') or {}
+    # Herkunft der Jahreskosten. Ohne Angabe bleibt es beim heutigen Datenweg (Yahoo):
+    # ein neutrales Etikett würde solche Zahlen an der Quellensperre der Website vorbeiführen.
+    pl_origin = text(pl.get('source'), 200)
+    via_yahoo = any(mark in pl_origin.upper() for mark in ('YAHOO', 'YFINANCE'))
+    pl_source = 'Yahoo-Finanzbericht · gespeicherte jährliche Aufschlüsselung' if via_yahoo or not pl_origin else \
+        ('SEC-Unternehmensbericht · ' + pl_origin) if 'SEC' in pl_origin.upper() else \
+        ('Unternehmensbericht · ' + pl_origin)
     costs = []
     for key, label, explanation in (
         ('cost_of_revenue', 'Herstellung & Leistungserbringung', 'Direkte Kosten der verkauften Produkte und erbrachten Leistungen.'),
@@ -81,7 +88,7 @@ def build_memo_overview(run):
             continue
         costs.append({'key': key, 'label': label, 'value': money(value, currency), 'explanation': explanation,
                       'period': 'Geschäftsjahr ' + str(pl['year']) if pl.get('year') else 'Berichtszeitraum nicht dokumentiert',
-                      'source': 'Yahoo-Finanzbericht · gespeicherte jährliche Aufschlüsselung'})
+                      'source': pl_source[:500]})
     score = number(figures.get('piotroski_f_score'))
     if score is not None and (not 0 <= score <= 9 or score != int(score)):
         score = None

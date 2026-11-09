@@ -50,3 +50,29 @@ class MemoOverviewTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class CostSourceTests(unittest.TestCase):
+    def source(self, origin):
+        breakdown = {'year': 2025, 'net_income': 1e6}
+        if origin is not None:
+            breakdown['source'] = origin
+        return module.build_memo_overview({'pl_breakdown': breakdown})['costs'][0]['source']
+
+    def test_without_documented_origin_the_current_yahoo_path_stays_visible(self):
+        # Ein neutrales Etikett würde Yahoo-Zahlen an der Quellensperre vorbeiführen.
+        self.assertIn('Yahoo', self.source(None))
+        self.assertIn('Yahoo', self.source(''))
+
+    def test_yahoo_and_yfinance_origins_are_never_relabelled(self):
+        for origin in ('Yahoo annual statements', 'yfinance income_stmt', 'YFINANCE'):
+            with self.subTest(origin=origin):
+                self.assertTrue(self.source(origin).startswith('Yahoo-Finanzbericht'))
+
+    def test_sec_origin_is_named_as_such(self):
+        self.assertEqual(self.source('SEC EDGAR 10-K Geschäftsjahr 2025'), 'SEC-Unternehmensbericht · SEC EDGAR 10-K Geschäftsjahr 2025')
+
+    def test_other_origins_are_passed_through_verbatim(self):
+        # Damit greift die Sperrliste der Website auch auf andere Anbieter.
+        self.assertEqual(self.source('IR-Seite, Geschäftsbericht 2025'), 'Unternehmensbericht · IR-Seite, Geschäftsbericht 2025')
+        self.assertIn('Alpha Vantage', self.source('Alpha Vantage'))
