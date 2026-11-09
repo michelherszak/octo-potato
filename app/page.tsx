@@ -1,8 +1,7 @@
 import {allArticles,companyCatalog} from '@/lib/content';
 import {topics} from '@/lib/catalog';
 import {Tags,dateText} from './components';
-import SearchExplorer from './SearchExplorer';
-import {buildSearchEntries,matchesCompany} from '@/lib/search';
+import {matchesCompany} from '@/lib/search';
 import {jsonLd,organizationLd,pageMetadata,websiteLd} from '@/lib/seo';
 
 export const dynamic='force-dynamic';
@@ -14,7 +13,7 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
   const {q='',thema=''}=await searchParams;
   const [all,articles]=await Promise.all([companyCatalog(),allArticles()]);
   const selected=topics.find(topic=>topic.id===thema);
-  // Die Einstiegsfragen oben wählen über ?thema= die Liste darunter aus.
+  // Bestehende Links mit ?thema= filtern weiterhin die Unternehmensliste.
   const catalog=all.filter(company=>matchesCompany(q,company)&&(!selected||company.topics.includes(selected.id)));
   // Beispielbeiträge bleiben sichtbar, solange noch nichts Echtes erschienen ist.
   const ranked=[...articles].sort((a,b)=>Date.parse(published(b))-Date.parse(published(a)));
@@ -22,7 +21,6 @@ export default async function Home({searchParams}:{searchParams:Promise<{q?:stri
   const latest=(real.length?real:ranked).slice(0,6);
   return <main id="inhalt" className="container company-index">
     <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd([organizationLd(),websiteLd()])}/>
-    <section className="browse"><SearchExplorer entries={buildSearchEntries(all,articles)} initialQuery={q} action="/" questionTarget="/#unternehmen" companiesOnly/></section>
     <div className="index-layout">
       <section aria-labelledby="unternehmen-titel">
         <div className="section-title" id="unternehmen">

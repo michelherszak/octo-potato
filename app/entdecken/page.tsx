@@ -1,8 +1,7 @@
 import {allArticles,companyCatalog} from '@/lib/content';
 import {topics} from '@/lib/catalog';
 import {ArticleRow,Icon} from '../components';
-import SearchExplorer from '../SearchExplorer';
-import {buildSearchEntries,matchesArticle,matchesCompany,matchingTopics} from '@/lib/search';
+import {matchesArticle,matchesCompany,matchingTopics} from '@/lib/search';
 import {pageMetadata} from '@/lib/seo';
 
 export const dynamic='force-dynamic';
@@ -52,12 +51,6 @@ export default async function Discover({searchParams}:{searchParams:Promise<{q?:
       </section>
 
       <div className="topic-sidebar">
-        <aside id="suche" className="topic-search-panel" aria-label="Themen und Inhalte finden">
-          <p className="eyebrow">Dein Einstieg</p>
-          <SearchExplorer entries={buildSearchEntries(catalog,all)} initialQuery={q} topic={thema} action="/entdecken" questionTarget="/entdecken#ergebnisse" compact/>
-          <div className="topic-search-filters"><p className="eyebrow">Themen eingrenzen</p><div className="filter-row"><a aria-current={!thema?'page':undefined} href={'/entdecken?q='+encodeURIComponent(q)+'#ergebnisse'}>Alle Themen</a>{topics.map(t=><a aria-current={thema===t.id?'page':undefined} href={'/entdecken?thema='+t.id+'&q='+encodeURIComponent(q)+'#ergebnisse'} key={t.id}>{t.short}</a>)}</div></div>
-          <a className="topic-company-directory" href="/"><strong>{catalog.length} Unternehmen</strong><span>Nach Technologie eingeordnet ↗</span></a>
-        </aside>
         <section className="demo-ad" aria-label="Demo-Anzeige">
           <span className="demo-ad-label">Demo-Anzeige</span>
           <div className="demo-ad-mark" aria-hidden="true">N<span>°</span></div>

@@ -4,7 +4,7 @@ Eine eigenständige, lesbare Website für Technologieanalysen und Aktienmemos. D
 
 ## Die erste Version
 
-- Magazin-Startseite mit Suche und Themenfiltern.
+- Globale Suche im Header auf jeder Seite: Vorschläge für Unternehmen, Themen und Beiträge, Einstiegsfragen und alle Themenfilter. Ergebnisse erscheinen zentral unter `/entdecken`; der Header bleibt beim Scrollen erreichbar und bricht auf mobilen Geräten in eine zweite Zeile um.
 - Acht Themenbereiche: Quanten-Technologie, KI, Halbleiter, Energie, Robotik, Cybersecurity, Raumfahrt/Kommunikation und Biotech/Medizintechnik.
 - 24 recherchierte Unternehmen mit Quellen und bewussten Mehrfachzuordnungen. Das ist eine Anfangsauswahl, keine automatische Klassifizierung aller 511 Aktien aus dem Research-System.
 - Unternehmensprofile und Beiträge aus freigegebenen Artikeln ergänzen die Themenübersichten automatisch.
