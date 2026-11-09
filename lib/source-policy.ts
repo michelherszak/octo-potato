@@ -1,8 +1,6 @@
-// Veröffentlichte Zahlen brauchen Quellen, die kostenlos zugänglich sind UND die
-// Weitergabe erlauben. Siehe docs/quellen-lizenzen.md.
+// Yahoo ist auf ausdrücklichen Nutzerwunsch zugelassen. Die übrige Sperrliste
+// bleibt bestehen. Öffentliche Yahoo-Quellenanzeigen regelt source-display.ts.
 export const BLOCKED_SOURCES: ReadonlyArray<{label:string;reason:string;patterns:RegExp[]}> = [
-  {label:'Yahoo Finance',reason:'Weiterveröffentlichung nicht gestattet',
-    patterns:[/yahoo/i,/\byfinance\b/i]},
   {label:'FRED (St. Louis Fed)',reason:'Speichern und Weitergabe laut API-Bedingungen untersagt',
     patterns:[/stlouisfed/i,/\bFRED\b/]},
   {label:'Alpha Vantage',reason:'Gratis-Stufe erlaubt keine öffentliche Anzeige',
@@ -17,6 +15,20 @@ export const BLOCKED_SOURCES: ReadonlyArray<{label:string;reason:string;patterns
     patterns:[/newsapi\.org/i,/\bnewsapi\b/i]},
 ];
 
+export function isYahooSource(value:unknown):boolean{
+  return typeof value==='string'&&/yahoo|\byfinance\b/i.test(value);
+}
+
+// Ältere yfinance-Auswertungen dokumentieren den Anbieter an den Zahlen, enthalten
+// aber keinen Quellenlink. Diese Herkunft genügt für den freigegebenen Import.
+export function hasYahooProvenance(article:{metrics?:Array<{source:string;source_url?:string}>;memo_overview?:{
+  piotroski:{source:string;source_url?:string};money_metrics:Array<{source:string;source_url?:string}>;costs:Array<{source:string;source_url?:string}>;
+}}){
+  const overview=article.memo_overview;
+  return [...(article.metrics||[]),...(overview?[overview.piotroski,...overview.money_metrics,...overview.costs]:[])]
+    .some(item=>isYahooSource(item.source)||isYahooSource(item.source_url));
+}
+
 export function blockedSource(value:unknown){
   if(typeof value!=='string'||!value.trim())return null;
   for(const entry of BLOCKED_SOURCES)
@@ -27,7 +39,7 @@ export function blockedSource(value:unknown){
 type Finding={path:string;value:string;label:string;reason:string};
 
 // Nur Felder, die eine Herkunft angeben. Fließtext bleibt ausgenommen: ein Memo darf
-// Yahoo als Unternehmen besprechen, es darf seine Zahlen nur nicht von dort beziehen.
+// einen Anbieter als Unternehmen besprechen, ohne ihn als Datenquelle zu verwenden.
 const SOURCE_KEYS=new Set(['source','source_url','url','rights_basis']);
 const isSourceField=(key:string,path:string)=>
   SOURCE_KEYS.has(key)||(key==='title'&&path.startsWith('sources['));

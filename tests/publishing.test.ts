@@ -33,3 +33,17 @@ test('direct service calls cannot bypass review or write unreviewed versions',as
   await assert.rejects(importArticle(db,{publication_id:randomUUID(),expected_revision:0,article:{...fixture(),editorial_review:undefined}} as never,'https://example.test'));
   assert.equal(db.sqlite.prepare('SELECT count(*) AS n FROM articles').get()!.n,0);
 });
+
+test('a Yahoo evaluation without source URLs imports and keeps its actual origin internally',async()=>{
+  const db=database();
+  const article={...fixture(),sources:[],metrics:[{key:'revenue_ttm',label:'Umsatz',value:'10 Mio. USD',
+    explanation:'Gespeicherter Umsatz.',period:'2026',source:'Yahoo Finance · gespeicherte Auswertung'}]};
+  const packet={publication_id:randomUUID(),expected_revision:0,article};
+  assert.equal(importSchema.safeParse(packet).success,true);
+  const result=await importArticle(db,packet,'https://example.test');
+  assert.equal(result.revision,1);
+  const stored=JSON.parse(db.sqlite.prepare('SELECT payload FROM articles').get()!.payload as string);
+  assert.equal(stored.metrics[0].source,'Yahoo Finance · gespeicherte Auswertung');
+  assert.deepEqual(stored.sources,[]);
+  assert.equal(importSchema.safeParse({...packet,article:{...article,metrics:[]}}).success,false);
+});

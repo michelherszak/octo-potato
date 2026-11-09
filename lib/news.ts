@@ -2,6 +2,7 @@ import {newsItemSchema,type NewsDigest,type NewsItem} from './contract.ts';
 
 type NewsDatabase=Pick<D1Database,'prepare'>;
 export const NEWS_WINDOW_DAYS=30;
+export const COMPANY_NEWS_LIMIT=5;
 const DAY=86_400_000;
 
 export class NewsConflict extends Error {}
@@ -22,17 +23,18 @@ export async function storeNewsDigest(db:NewsDatabase,digest:NewsDigest,now=Date
   return {idempotent:false,ticker:digest.ticker,items:digest.items.length};
 }
 
-export type RecentNews={items:NewsItem[];publishedAt:number|null};
+export type CompanyNewsItem=NewsItem & {origin?:'company_feed'|'news_feed'};
+export type RecentNews={items:CompanyNewsItem[];publishedAt:number|null;unavailable?:boolean};
 
 // Gespeichertes wird trotzdem erneut geprüft: ein beschädigter Eintrag erscheint nicht.
-export async function recentCompanyNews(db:NewsDatabase,ticker:string,now=Date.now(),days=NEWS_WINDOW_DAYS):Promise<RecentNews>{
+export async function recentCompanyNews(db:NewsDatabase,ticker:string,now=Date.now(),days?:number):Promise<RecentNews>{
   const row=await db.prepare('SELECT payload,published_at FROM company_news WHERE ticker=?')
     .bind(ticker).first<{payload:string;published_at:number}>();
   if(!row)return {items:[],publishedAt:null};
   let raw:unknown;
   try{raw=JSON.parse(row.payload);}catch{return {items:[],publishedAt:null};}
   const list=Array.isArray((raw as {items?:unknown})?.items)?(raw as {items:unknown[]}).items:[];
-  const cutoff=now-days*DAY;
+  const cutoff=days===undefined?0:now-days*DAY;
   const items=list.flatMap(entry=>{const parsed=newsItemSchema.safeParse(entry);return parsed.success?[parsed.data]:[];})
     .filter(item=>{const at=Date.parse(item.date+'T00:00:00Z');return at>=cutoff&&at<=now+DAY;})
     .sort((a,b)=>b.date.localeCompare(a.date));

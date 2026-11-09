@@ -1,6 +1,6 @@
 # TechThese
 
-Eine eigenständige, lesbare Website für Technologieanalysen und Aktienmemos. Die Recherche bleibt in **Evaluating Stocks**. TechThese erhält ausschließlich ausdrücklich freigegebene Veröffentlichungspakete; es ruft weder Yahoo Finance noch SEC EDGAR auf.
+Eine eigenständige, lesbare Website für Technologieanalysen und Aktienmemos. Die Finanzrecherche bleibt in **Evaluating Stocks**; Analysen und Kennzahlen werden als ausdrücklich freigegebene Pakete übertragen. Unternehmensseiten ergänzen automatisch die fünf neuesten verfügbaren Nachrichtenschlagzeilen aus RSS-Feeds. Finanzkennzahlen und SEC-Daten werden weiterhin nicht von der Website abgerufen.
 
 ## Die erste Version
 
@@ -8,6 +8,7 @@ Eine eigenständige, lesbare Website für Technologieanalysen und Aktienmemos. D
 - Acht Themenbereiche: Quanten-Technologie, KI, Halbleiter, Energie, Robotik, Cybersecurity, Raumfahrt/Kommunikation und Biotech/Medizintechnik.
 - 24 recherchierte Unternehmen mit Quellen und bewussten Mehrfachzuordnungen. Das ist eine Anfangsauswahl, keine automatische Klassifizierung aller 511 Aktien aus dem Research-System.
 - Unternehmensprofile und Beiträge aus freigegebenen Artikeln ergänzen die Themenübersichten automatisch.
+- Die Nachrichtenliste steht direkt auf `/unternehmen/<TICKER>` (z. B. `/unternehmen/ARQQ`), rechts neben den Aktienbewertungen: ein Fünftel der Breite für Nachrichten, vier Fünftel für Bewertungen. Auf schmalen Bildschirmen steht sie darunter. Sie zeigt automatisch die fünf neuesten verfügbaren Meldungen, auch ältere als 30 Tage. Veröffentlichte redaktionelle Meldungen werden mit RSS-Schlagzeilen zusammengeführt; automatische Schlagzeilen sind als solche erkennbar. Arqit nutzt zusätzlich seinen direkten IR-Feed, weitere Unternehmen den tickerbezogenen Nachrichtenfeed.
 - Artikel kombinieren eigene Analyse, verständliches Memo, Kennzahlen, Quellen und festgehaltenen Datenstand.
 - Servergerenderte Seiten, Artikel-Metadaten, kanonische Artikeladressen, strukturierte Article-Daten und Sitemap.
 - Geschützter Import, unveränderliche frühere Versionen, Schutz vor veralteten Änderungen und wiederholbaren Übertragungen.
@@ -26,6 +27,8 @@ In `.dev.vars` einen zufälligen `PUBLISH_TOKEN` mit mindestens 32 Zeichen eintr
 
 Welche Quellen veröffentlicht werden dürfen, steht in
 [`docs/quellen-lizenzen.md`](docs/quellen-lizenzen.md).
+Yahoo-Finance-/yfinance-Auswertungen sind auf Nutzerwunsch für den Import zugelassen.
+Ihre Quellenmetadaten bleiben intern erhalten; öffentliche Yahoo-Quellenfelder und Links werden ausgeblendet.
 
 Die Einrichtung der E-Mail-/Passwort-Konten mit Supabase Auth ist in
 [`docs/supabase-auth.md`](docs/supabase-auth.md) beschrieben. E-Mail-Bestätigung und

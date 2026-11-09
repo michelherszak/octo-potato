@@ -99,8 +99,11 @@ Investor-Relations-Seite des Unternehmens, die ohnehin schon als Katalogquelle d
 - `source_url`: Link auf die Einreichung in EDGAR
 - `period`: der tatsächliche Zeitraum
 
-Der Veröffentlichungsvertrag weist Pakete mit gesperrten Quellen seit `f0b112b` mit
-Status 422 zurück; die Meldung nennt die beanstandete Fundstelle.
+Der Veröffentlichungsvertrag weist Pakete mit gesperrten Quellen mit Status 422 zurück;
+die Meldung nennt die beanstandete Fundstelle. Yahoo Finance und `yfinance` sind seit
+9. November 2026 auf Nutzerwunsch ausgenommen. Ihre Quellenangaben bleiben intern
+gespeichert und werden öffentlich ausgeblendet; die EDGAR-Zuordnung hier bleibt
+eine alternative Bezugsquelle.
 
 ## Meldungen der letzten 30 Tage
 
@@ -132,6 +135,28 @@ Marvell vom 2. November 2026 trägt Item 2.02 (Zahlen); die angehängte Pressemi
 überschrieben mit „MARVELL AND LUMENTUM TO COMBINE, CREATING A CATEGORY LEADER IN AI
 CONNECTIVITY". Deshalb zeigt der Entwurf diesen Titel als Hinweis für die Redaktion.
 
-Nicht bei der SEC registrierte Unternehmen haben hier keine Daten. Und manche Firmen melden
+Nicht bei der SEC registrierte Unternehmen haben dort keine Daten. Und manche Firmen melden
 über die SEC nur wenig: Arqit hatte zwischen dem 9. Oktober und 9. November 2026 dort
-ausschließlich Insidergeschäfte. Für solche Fälle bleibt die Investor-Relations-Seite die Quelle.
+ausschließlich Insidergeschäfte. Die Investor-Relations-Seite bleibt dafür eine Primärquelle.
+
+Ergänzend sucht das Meldungs-Panel Medienberichte über die GDELT DOC 2.0 API. Diese erscheinen
+als eigene Kategorie `medienbericht`, zunächst abgewählt und ohne veröffentlichbare Überschrift.
+Die Redaktion liest den Originalartikel und formuliert eigene Texte. Originaltitel bleiben
+lokale Recherchehinweise. Das GDELT-Erfassungsdatum wird als solches gekennzeichnet und ist
+nicht zwingend das Veröffentlichungsdatum. Der öffentliche Digest steht direkt unter
+`/unternehmen/<TICKER>` zwischen Firmenprofil und Analysen. Details zum Ablauf stehen in
+[`publishing-cloudflare.md`](publishing-cloudflare.md#company-news).
+
+### Direkte Alternative zu GDELT: Unternehmens-RSS
+
+Arqit bietet einen eigenen
+[Pressemitteilungs-RSS-Feed](https://ir.arqit.uk/news-events/press-releases/rss).
+Am 9. November 2026 erfolgreich als XML abgerufen: zehn Einträge, zuletzt die
+[Sirius-Investition vom 20. Oktober](https://ir.arqit.uk/news-events/press-releases/detail/133/arqit-announces-strategic-investment-in-sirius-to-strengthen-quantum-safe-communications-for-defence-and-government).
+Danach folgen vorläufige Geschäftszahlen vom 8. Oktober und die Babcock-Demonstration
+vom 22. September; beide liegen außerhalb des aktuellen 30-Tage-Fensters.
+Das sind Aussagen des Unternehmens, keine unabhängige Medienberichterstattung.
+Der Feed ist in den automatischen Nachrichtenabruf auf `/unternehmen/ARQQ` eingebunden.
+Zusammen mit dem tickerbezogenen RSS-Feed liefert er die fünf neuesten verfügbaren
+Einträge; ältere Meldungen bleiben dafür zugelassen. Andere Unternehmensseiten nutzen
+den tickerbezogenen Nachrichtenfeed. Details stehen im Veröffentlichungsablauf.

@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {topics} from './catalog.ts';
 import {reviewSchema} from './publication-policy.ts';
 import {memoOverviewSchema} from './memo-overview.ts';
-import {findBlockedSources} from './source-policy.ts';
+import {findBlockedSources,hasYahooProvenance} from './source-policy.ts';
 import {NEWS_CATEGORY_IDS} from './news-categories.ts';
 const safeUrl=z.string().url().max(2000).refine(s=>/^https?:\/\//.test(s),'Nur HTTP(S)-Quellen');
 const date=z.string().datetime({offset:true});
@@ -15,19 +15,21 @@ export const articleSchema=z.object({
   ticker:z.string().max(30).default(''),company:z.string().max(150).default(''),kind:z.enum(['Analyse & Memo','Grundlagen']).default('Analyse & Memo'),
   thesis:z.string().trim().min(20).max(30000),memo:z.string().trim().min(20).max(60000),summary:z.array(z.string().max(700)).max(5).default([]),
   metrics:z.array(z.object({key:z.string().max(80),label:z.string().max(150),value:z.string().max(100),explanation:z.string().max(1200),period:z.string().max(150),source:z.string().max(500),source_url:safeUrl.optional()})).max(30).default([]),
-  sources:z.array(z.object({title:z.string().min(1).max(300),url:safeUrl})).min(1).max(100),data_as_of:date,original_analysis_at:date.optional(),
+  sources:z.array(z.object({title:z.string().min(1).max(300),url:safeUrl})).max(100),data_as_of:date,original_analysis_at:date.optional(),
   source_run_id:z.string().max(200).default(''),model_verdict:z.string().max(100).default(''),model_score:z.number().finite().min(0).max(100).nullable().default(null),
   top_risk:z.string().max(3000).default(''),methodology:z.string().max(2000).default(''),ai_assisted:z.boolean().default(true),
 }).strict();
 export const importSchema=z.object({publication_id:z.string().uuid(),expected_revision:z.number().int().nonnegative(),notify_subscribers:z.boolean().optional(),article:articleSchema.extend({editorial_review:reviewSchema.refine(r=>r.advertising==='none','Bezahlte und Affiliate-Beiträge sind bis zur gesonderten Prüfung gesperrt.')})}).strict()
   // Quellen ohne Weitergaberecht werden nicht veröffentlicht. Siehe docs/quellen-lizenzen.md.
   .superRefine((value,ctx)=>{
+    if(!value.article.sources.length&&!hasYahooProvenance(value.article))
+      ctx.addIssue({code:z.ZodIssueCode.custom,path:['article','sources'],message:'Mindestens eine Quellenadresse oder eine dokumentierte Yahoo-Herkunft der Kennzahlen ist erforderlich.'});
     for(const finding of findBlockedSources(value.article))
       ctx.addIssue({code:z.ZodIssueCode.custom,path:['article',...finding.path.split(/[.[]/).filter(Boolean).map(part=>part.replace(']',''))],
         message:`${finding.label} ist als Quelle gesperrt (${finding.reason}). Gefunden: "${finding.value}". Zulässige Quellen stehen in docs/quellen-lizenzen.md.`});
   });
 // Meldungen der letzten Wochen zu einem Unternehmen. Überschrift und Zusammenfassung sind
-// eigene Worte der Redaktion; verlinkt wird die Primärquelle, kein Medienartikel.
+// eigene Worte der Redaktion; verlinkt wird die Einreichung oder der Originalbericht.
 const newsDay=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(day=>!Number.isNaN(Date.parse(day+'T00:00:00Z')),'Ungültiges Datum');
 export const newsItemSchema=z.object({
   date:newsDay,category:z.enum(NEWS_CATEGORY_IDS),

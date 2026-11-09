@@ -27,9 +27,14 @@ Retries preserve their publication identity, notification choice and revisions; 
 New articles notify confirmed subscribers. Revisions notify only when the publisher
 sets `notify_subscribers: true`. The response reports `notifications_queued`.
 
-Only sources that are free to access **and** permit republication may be cited. Yahoo
-Finance (including `yfinance`), FRED and the free tiers of the commercial market-data
-APIs do not qualify. See [`quellen-lizenzen.md`](quellen-lizenzen.md); the tag mapping for replacing yfinance is in [`edgar-kennzahlen.md`](edgar-kennzahlen.md).
+Yahoo Finance and `yfinance` are explicitly allowed by the publisher policy. Their
+original source metadata stays in the stored article and revision history, while public
+article and company-news pages suppress Yahoo source labels and links. Data is never
+relabeled as SEC or another provider. Older Yahoo evaluations may have no source URLs:
+documented Yahoo provenance on a metric or overview field is sufficient for the import.
+The bridge no longer rejects those drafts locally with 409. Other source restrictions
+and draft/version conflict checks remain in effect. See
+[`quellen-lizenzen.md`](quellen-lizenzen.md).
 
 The eight topic categories remain predefined. New articles and company links use
 the selected categories automatically. Adding a category requires coordinated
@@ -68,12 +73,44 @@ does not make it the newer one.
 
 ## Company news
 
-Company pages show a reviewed digest of the last 30 days, built from SEC EDGAR filings.
+The news list lives directly on **`/unternehmen/<TICKER>`**, for example
+`/unternehmen/ARQQ`, beside the stock evaluations below the company profile. On desktop,
+evaluations occupy four fifths of the content width and the news sidebar one fifth;
+below 900 px the news stacks underneath. The section
+`#nachrichten` automatically shows the **five latest available items**, newest first,
+including older items when fewer than five are recent. The reader combines published
+editorial digests with RSS headlines: Arqit's direct investor-relations RSS feed plus
+the ticker-based Yahoo Finance RSS feed, which also covers the other company pages.
+Matching URLs and headlines are deduplicated. No manual digest is needed for the section
+to appear. The original publication date remains visible; the old 30-day cutoff no
+longer applies to this list.
+
+Automatic headlines have no generated summary and are identified as automatic feed
+content, never as editorially verified text. Company releases represent the company's
+own statements. Yahoo source fields and links remain hidden publicly as requested.
+The server caches feed results for 15 minutes, shares concurrent fetches, applies a
+six-second timeout and a 1 MB response limit, and retains the last successful in-memory
+snapshot on a failed refresh. Requests use only the ticker, without visitor or publisher
+credentials. Unavailable sources do not take the company page down.
+
+Editorial summaries of SEC filings and GDELT media reports can still be prepared and
+approved in Evaluating Stocks:
 In Evaluating Stocks open a memo and use **„Auf TechThese veröffentlichen · Meldungen der
 letzten 30 Tage"**: the draft is loaded only on request, insider trades start deselected,
 and the title of an attached press release (exhibit 99.1) is shown as a hint. Headlines and
 summaries are written by the editor in their own words; each entry links to the original
-filing.
+filing or media article. Media reports form a separate section in the editor, start
+deselected and have an empty headline: the editor must supply an original headline before
+including one. Original article titles are editing hints only and never enter the public
+packet. Similar reports within three days are grouped, preferring established outlets;
+unrelated titles, automated stock-news networks and blocked providers are filtered out.
+This remains an editorial shortlist, not a complete news archive.
+
+GDELT's `seendate` is an observation date, not a verified publication date. Both the editor
+and public list explain that distinction. Media entries link to the original article;
+the public section also cites and links to the GDELT Project. The API is called at most
+once every six seconds per backend process. A failed SEC or GDELT request produces a
+visible editor note and does not prevent results from the other source.
 
 The bridge needs a contact address for the SEC `User-Agent`, which the SEC requires.
 Set it once; later runs of the configurator keep it:
@@ -85,12 +122,15 @@ python3 integrations/configure.py --app "/Pfad/zu/Evaluate stocks" --url "https:
 `POST /api/news` uses the same `Authorization: Bearer <PUBLISH_TOKEN>` as `/api/import` and a
 120 kB limit. The packet is `publication_id`, `ticker`, `editorial_review` (same rules as
 articles) and up to 40 `items` of `date`, `category`, `headline`, `summary`, `source`,
-`source_url` (HTTPS only) and optional `form`. The source policy applies: Yahoo Finance,
-NewsAPI and the other blocked providers are rejected with 422. A repeated `publication_id`
+`source_url` (HTTPS only) and optional `form`. Yahoo sources are accepted and retained
+internally, with their source labels and links hidden publicly. NewsAPI and the other
+blocked providers are rejected with 422. A repeated `publication_id`
 with identical content returns 200, with different content 409; a new id replaces the
 company's digest. `GET /api/import` reports `capabilities.company_news: true`.
 
-Without a published digest the section does not appear. A digest with no entries shows
-that nothing reportable happened in the window. The section never takes the company page
+The section also appears without a published digest, using automatic headlines. If no
+items can be loaded it shows an honest empty or unavailable state instead of fabricated
+rows. Publishing an empty digest replaces only the editorial portion; automatic news
+remains available. The section never takes the company page
 down: if the `company_news` table is missing because migration 0004 has not been applied
 yet, the page renders without it.

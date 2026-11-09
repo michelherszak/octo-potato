@@ -59,8 +59,8 @@ class CostSourceTests(unittest.TestCase):
             breakdown['source'] = origin
         return module.build_memo_overview({'pl_breakdown': breakdown})['costs'][0]['source']
 
-    def test_without_documented_origin_the_current_yahoo_path_stays_visible(self):
-        # Ein neutrales Etikett würde Yahoo-Zahlen an der Quellensperre vorbeiführen.
+    def test_without_documented_origin_the_current_yahoo_path_stays_documented(self):
+        # Der Export bewahrt die Herkunft; nur die öffentliche Anzeige blendet sie aus.
         self.assertIn('Yahoo', self.source(None))
         self.assertIn('Yahoo', self.source(''))
 

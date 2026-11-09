@@ -1,4 +1,4 @@
-"""Meldungs-Digest aus SEC EDGAR: Entwurf abrufen, redaktionell freigeben, an die Website übertragen."""
+"""Meldungs-Digest aus SEC EDGAR und GDELT: abrufen, redaktionell freigeben, übertragen."""
 from __future__ import annotations
 
 import hashlib
@@ -15,17 +15,20 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import evaluation
 from .config import DATA_DIR
 from .store import read_json, write_json
-from .website_news_core import CATEGORIES, build_packet, collect, exhibit_title, pick_exhibit, window
+from .website_news_core import CATEGORIES, build_packet, collect, exhibit_title, gdelt_url, media_drafts, pick_exhibit, window
 from .website_publish import _settings, _target
 
 router = APIRouter(prefix='/api/website')
 TICKERS = DATA_DIR / 'website_sec_tickers.json'
 NEWS_PUSHES = DATA_DIR / 'website_news_pushes.json'
 RIGHTS = ('SEC EDGAR: behördliche Einreichungen, laut SEC frei zugänglich und weiterverwendbar. '
-          'Überschriften und Zusammenfassungen sind eigene Texte der Redaktion.')
+          'Medienberichte: eigene Überschriften und Zusammenfassungen mit Link zum Originalartikel; '
+          'Recherche-Metadaten vom GDELT Project (https://www.gdeltproject.org/).')
 _records_lock = threading.Lock()
 _rate_lock = threading.Lock()
 _last_request = [0.0]
+_gdelt_lock = threading.Lock()
+_last_gdelt = [0.0]
 
 
 def _sec_get(url: str, contact: str):
@@ -81,26 +84,72 @@ def _run(run_id: str):
     return run, ticker
 
 
+def _sec_drafts(name: str, ticker: str, since, until, notes: list[str]) -> list[dict]:
+    """Pflichtmeldungen; ein Problem hier verhindert die Medienberichte nicht."""
+    try:
+        contact = _contact()
+        cik = _cik(ticker, contact)
+    except HTTPException as exc:
+        notes.append(str(exc.detail))
+        return []
+    except (httpx.HTTPError, ValueError):
+        notes.append('SEC EDGAR ist gerade nicht erreichbar; Pflichtmeldungen fehlen in diesem Entwurf.')
+        return []
+    try:
+        submissions = _sec_get(f'https://data.sec.gov/submissions/CIK{cik:010d}.json', contact).json()
+    except (httpx.HTTPError, ValueError):
+        notes.append('SEC EDGAR ist gerade nicht erreichbar; Pflichtmeldungen fehlen in diesem Entwurf.')
+        return []
+    drafts = collect(submissions, name, since, until)
+    # Höchstens zwölf Hinweise, damit ein Entwurf die SEC nicht mit Anfragen überzieht.
+    for entry in [d for d in drafts if d['form'] in ('8-K', '6-K')][:12]:
+        entry['hint'] = _hint(cik, entry, contact)
+    return drafts
+
+
+def _media(name: str, ticker: str, since, until, notes: list[str]) -> list[dict]:
+    """Berichterstattung über GDELT. GDELT erlaubt höchstens eine Anfrage alle fünf Sekunden
+    und antwortet sonst mit Klartext statt JSON; das wird zu einem Hinweis, nicht zu einem Fehler."""
+    with _gdelt_lock:
+        wait = 6.0 - (time.monotonic() - _last_gdelt[0])
+        if wait > 0:
+            time.sleep(wait)
+        _last_gdelt[0] = time.monotonic()
+    try:
+        response = httpx.get(gdelt_url(name, ticker=ticker), headers={'User-Agent': 'TechThese-Redaktion'}, timeout=30, follow_redirects=False)
+        response.raise_for_status()
+        data = response.json()
+        if not isinstance(data, dict) or not isinstance(data.get('articles', []), list):
+            raise ValueError('Ungültige GDELT-Antwort')
+    except ValueError:
+        notes.append('GDELT hat keine gültige Artikelliste geliefert. Medienberichte bitte später erneut laden.')
+        return []
+    except httpx.HTTPStatusError as exc:
+        notes.append('GDELT drosselt gerade die Abrufe. Medienberichte bitte später erneut laden.'
+                     if exc.response.status_code == 429 else
+                     'GDELT ist gerade nicht erreichbar; Medienberichte fehlen in diesem Entwurf.')
+        return []
+    except httpx.HTTPError:
+        notes.append('GDELT ist gerade nicht erreichbar; Medienberichte fehlen in diesem Entwurf.')
+        return []
+    return media_drafts(data, name, ticker, since, until)
+
+
 @router.get('/runs/{run_id}/news')
 def news_draft(run_id: str):
     run, ticker = _run(run_id)
-    contact = _contact()
     try:
         url = _target(_settings())
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-    cik = _cik(ticker, contact)
+    name = str(run.get('name') or ticker)
     since, until = window()
-    try:
-        submissions = _sec_get(f'https://data.sec.gov/submissions/CIK{cik:010d}.json', contact).json()
-    except httpx.HTTPError as exc:
-        raise HTTPException(502, 'SEC EDGAR ist gerade nicht erreichbar. Bitte später erneut versuchen.') from exc
-    drafts = collect(submissions, str(run.get('name') or ticker), since, until)
-    # Höchstens zwölf Hinweise, damit ein Entwurf die SEC nicht mit Anfragen überzieht.
-    for entry in [d for d in drafts if d['form'] in ('8-K', '6-K')][:12]:
-        entry['hint'] = _hint(cik, entry, contact)
-    return {'ticker': ticker, 'name': run.get('name') or ticker, 'since': since.isoformat(), 'until': until.isoformat(),
-            'target_url': url, 'categories': CATEGORIES, 'drafts': drafts}
+    notes: list[str] = []
+    drafts = _sec_drafts(name, ticker, since, until, notes) + _media(name, ticker, since, until, notes)
+    drafts.sort(key=lambda entry: entry['date'], reverse=True)
+    return {'ticker': ticker, 'name': name, 'since': since.isoformat(), 'until': until.isoformat(),
+            'target_url': url, 'categories': CATEGORIES, 'drafts': drafts, 'notes': notes,
+            'attribution': 'Medienberichte gefunden über das GDELT Project (gdeltproject.org).'}
 
 
 class NewsEntryIn(BaseModel):

@@ -4,6 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,readdirSync} from 'node:fs';
 import {newsDigestSchema} from '../lib/contract.ts';
 import {NewsConflict,recentCompanyNews,storeNewsDigest} from '../lib/news.ts';
+import {execFileSync} from 'node:child_process';
 
 const DAY=86_400_000;
 const today=new Date('2026-11-09T12:00:00Z').getTime();
@@ -38,7 +39,6 @@ test('a reviewed digest with primary sources is accepted and the ticker normalis
 
 test('blocked, insecure, future and unknown entries are refused',()=>{
   const cases:Array<[string,Record<string,unknown>]>=[
-    ['Yahoo als Herkunft',{source:'Yahoo Finance News'}],
     ['NewsAPI als Link',{source_url:'https://newsapi.org/v2/everything?q=marvell'}],
     ['unverschlüsselter Link',{source_url:'http://www.sec.gov/edgar'}],
     ['Datum in der Zukunft',{date:new Date(Date.now()+5*DAY).toISOString().slice(0,10)}],
@@ -50,6 +50,13 @@ test('blocked, insecure, future and unknown entries are refused',()=>{
   assert.equal(newsDigestSchema.safeParse({...digest([item()]),editorial_review:{...review,advertising:'paid'}}).success,false,'bezahlter Inhalt');
 });
 
+test('Yahoo company news is accepted with its original provenance',()=>{
+  const parsed=newsDigestSchema.parse(digest([item({category:'medienbericht',source:'Yahoo Finance News',
+    source_url:'https://finance.yahoo.com/news/arqit-example.html'})]));
+  assert.equal(parsed.items[0].source,'Yahoo Finance News');
+  assert.equal(parsed.items[0].source_url,'https://finance.yahoo.com/news/arqit-example.html');
+});
+
 test('a digest stores idempotently and a reused id with other content conflicts',async()=>{
   const {db}=database();
   const first=newsDigestSchema.parse(digest([item()]));
@@ -59,7 +66,7 @@ test('a digest stores idempotently and a reused id with other content conflicts'
   await assert.rejects(storeNewsDigest(db,changed,today),NewsConflict);
 });
 
-test('a newer digest replaces the old one and only the last 30 days are shown, newest first',async()=>{
+test('a newer digest replaces the old one and older news remains available for the latest-five list',async()=>{
   const {db}=database();
   await storeNewsDigest(db,newsDigestSchema.parse(digest([item({date:day(3)})])),today-DAY);
   await storeNewsDigest(db,newsDigestSchema.parse(digest([
@@ -68,7 +75,8 @@ test('a newer digest replaces the old one and only the last 30 days are shown, n
     item({date:day(2),category:'uebernahme',headline:'Ankündigung einer geplanten Übernahme'}),
   ],'8c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f')),today);
   const news=await recentCompanyNews(db,'MRVL',today);
-  assert.deepEqual(news.items.map(entry=>entry.category),['uebernahme','vertraege']);
+  assert.deepEqual(news.items.map(entry=>entry.category),['uebernahme','vertraege','quartalszahlen']);
+  assert.deepEqual((await recentCompanyNews(db,'MRVL',today,30)).items.map(entry=>entry.category),['uebernahme','vertraege']);
   assert.equal(news.publishedAt,today);
 });
 
@@ -77,4 +85,23 @@ test('no digest means no section, and a damaged row shows nothing',async()=>{
   assert.deepEqual(await recentCompanyNews(db,'ARQQ',today),{items:[],publishedAt:null});
   exec('INSERT INTO company_news(ticker,publication_id,payload,published_at) VALUES(?,?,?,?)','ARQQ','kaputt','{nicht json',today);
   assert.deepEqual(await recentCompanyNews(db,'ARQQ',today),{items:[],publishedAt:null});
+});
+
+test('an actual reviewed Python media draft is accepted, stored and read on the company page',async()=>{
+  const script=`import importlib.util,json,sys
+spec=importlib.util.spec_from_file_location('news_core',sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+d=m.media_drafts({'articles':[{'url':'https://www.reuters.com/technology/arqit/',
+ 'title':'Arqit signs major encryption contract with European bank','seendate':'20261105T143000Z','language':'English'}]},'Arqit Quantum','ARQQ')[0]
+d.update(include=True,headline='Arqit gewinnt eine europäische Bank als Kunden',summary='Eigene redaktionelle Einordnung der Vereinbarung.')
+print(json.dumps(m.build_packet('6b2f1c3e-7a6d-4c8b-9e0f-1a2b3c4d5e6f','arqq',[d],json.loads(sys.argv[2]))))`;
+  const raw=JSON.parse(execFileSync('python3',['-c',script,new URL('../integrations/evaluating-stocks/website_news_core.py',import.meta.url).pathname,JSON.stringify({...review,rights_basis:'Eigene Texte mit Link zum Medienbericht; Recherche über das GDELT Project.'})],{encoding:'utf8'}));
+  const packet=newsDigestSchema.parse(raw);
+  const {db}=database();
+  await storeNewsDigest(db,packet,today);
+  const news=await recentCompanyNews(db,'ARQQ',today);
+  assert.equal(news.items.length,1);
+  assert.equal(news.items[0].category,'medienbericht');
+  assert.equal(news.items[0].headline,'Arqit gewinnt eine europäische Bank als Kunden');
+  assert.equal(news.items[0].source_url,'https://www.reuters.com/technology/arqit/');
+  assert.equal('hint' in news.items[0],false);
 });

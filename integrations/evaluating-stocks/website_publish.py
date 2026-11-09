@@ -372,7 +372,8 @@ def push(run_id:str,body:PushIn):
     problem=_mode_problem(body.editorial.mode,body.expected_revision)
     if problem:raise HTTPException(409,problem)
     article=export_article(run,body.editorial)
-    if not article.get('sources'):raise HTTPException(409,'Bitte mindestens eine Quelle angeben, aus der die Zahlen tatsächlich stammen.')
+    # Die Website prüft die Quellen. Alte Yahoo-Auswertungen haben Anbieterangaben an
+    # den Kennzahlen, aber oft keine URL; das darf den Push nicht lokal mit 409 stoppen.
     review={key:getattr(body.editorial,key).strip() for key in ('rights_basis','conflicts','advertising','advertising_details')}
     review.update(reviewer=body.editorial.author.strip(),edited=True,facts_checked=True,commercial_rights_confirmed=True)
     fingerprint=hashlib.sha256(json.dumps({'article':article,'review':review,'notify_subscribers':body.notify_subscribers},sort_keys=True).encode()).hexdigest()

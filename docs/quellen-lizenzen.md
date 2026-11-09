@@ -18,11 +18,20 @@ Veröffentlichung gehört die Prüfung in fachkundige Hände.
 | Dokumente der EU-Kommission | CC BY 4.0 nach Beschluss 2011/833/EU | Namensnennung; Änderungen kenntlich machen |
 | EZB-Statistiken | freier Zugang und freie Weiterverwendung | gilt nicht für in den Reihen enthaltene Daten Dritter; Referenzkurse ausdrücklich nur zu Informationszwecken |
 
-## Nicht geeignet
+## Yahoo: technische Veröffentlichungspolitik
+
+Auf ausdrücklichen Nutzerwunsch vom 9. November 2026 blockiert TechThese keine
+Veröffentlichungen mehr wegen `finance.yahoo.com`, Yahoo Finance oder `yfinance`.
+Bei älteren Auswertungen genügt die dokumentierte Yahoo-Herkunft der Kennzahlen auch
+ohne Quellenadresse. Die Herkunft bleibt im gespeicherten Paket und in früheren
+Versionen erhalten; öffentliche Quellenfelder und Links zu Yahoo werden ausgeblendet.
+Andere Quellen bleiben sichtbar. Zahlen werden nicht als Daten eines anderen Anbieters
+ausgegeben. Diese Einstellung ersetzt die frühere pauschale Yahoo-Sperre.
+
+## Weitere Quellen mit Einschränkungen
 
 | Quelle | Grund |
 | --- | --- |
-| Yahoo Finance, auch über `yfinance` | Weiterveröffentlichung nicht gestattet; der Zugriff erfolgt über eine nicht dokumentierte Schnittstelle |
 | Alpha Vantage, Finnhub, Twelve Data, Financial Modeling Prep | die kostenlosen Stufen erlauben keine öffentliche Anzeige; externe Anzeige beginnt bei kostenpflichtigen Stufen |
 | NewsAPI.org | der Gratis-Plan ist auf Entwicklung und Tests beschränkt; Produktivbetrieb ist ausdrücklich untersagt |
 | FRED (St. Louis Fed) | der Public-Domain-Status gilt für persönliche, Bildungs- und nicht-kommerzielle Zwecke; die API-Bedingungen untersagen Speichern, Zwischenspeichern und Weitergabe an Dritte; die Urheberrechte der einzelnen Reihen bleiben bei deren Eigentümern |
@@ -33,6 +42,32 @@ nicht nutzbar.
 
 Die konkrete Zuordnung der Memo-Kennzahlen auf EDGAR-Tags steht in
 [`edgar-kennzahlen.md`](edgar-kennzahlen.md).
+
+## Medienberichte als Recherchehinweise
+
+Die GDELT DOC 2.0 API wird in Evaluating Stocks zur Suche nach Berichten über Unternehmen
+verwendet. GDELT erlaubt die Nutzung und Weitergabe seiner Datensätze einschließlich
+kommerzieller Zwecke, verlangt dabei die Nennung des GDELT Project und einen Link.
+Grundlage: [GDELT Terms of Use](https://www.gdeltproject.org/about.html#termsofuse),
+geprüft am 9. November 2026. Die API ist in der
+[offiziellen DOC-2.0-Dokumentation](https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/)
+beschrieben. Diese Angaben beziehen sich auf das GDELT Project, nicht auf GDELT Cloud.
+
+Die Rechte an verlinkten Medienartikeln sind davon getrennt. Für TechThese werden daher
+eigene Überschriften und Zusammenfassungen mit Link zum Originalartikel freigegeben;
+fremde Originaltitel bleiben im lokalen Redaktions-Panel, Volltexte werden nicht abgerufen.
+Die Unternehmensseite nennt GDELT bei Medienberichten und verlinkt das Projekt.
+Die übrige Sperrliste bleibt auch für Nachrichten bestehen; Yahoo ist wie oben beschrieben zugelassen.
+
+## Automatische Nachrichtenliste auf Unternehmensseiten
+
+Auf ausdrücklichen Nutzerwunsch werden auf `/unternehmen/<TICKER>` automatisch die fünf
+neuesten verfügbaren Meldungen angezeigt, bei Bedarf auch ältere als 30 Tage. Dafür
+liest TechThese RSS-/Atom-Schlagzeilen, ohne Artikelvolltexte oder automatisch erzeugte
+Zusammenfassungen zu übernehmen. Arqit nutzt seinen direkten IR-Feed; der tickerbezogene
+Nachrichtenfeed ergänzt weitere Treffer und deckt die übrigen Unternehmen ab.
+Automatische Schlagzeilen werden von redaktionell bearbeiteten Texten unterschieden;
+Unternehmensmeldungen sind als Unternehmensangaben gekennzeichnet.
 
 ## Im Veröffentlichungsvertrag
 

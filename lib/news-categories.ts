@@ -10,6 +10,7 @@ export const NEWS_CATEGORIES={
   insider:'Insidergeschäfte',
   grossaktionaere:'Großaktionäre',
   pressemitteilung:'Pressemitteilung',
+  medienbericht:'Medienbericht',
   sonstiges:'Sonstige Meldung',
 } as const;
 

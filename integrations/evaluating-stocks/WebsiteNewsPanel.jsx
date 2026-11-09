@@ -1,8 +1,7 @@
 import {useState} from 'react'
 import {api} from '../api.js'
 
-// Meldungen der letzten 30 Tage aus SEC EDGAR. Geladen wird erst auf Knopfdruck,
-// damit nicht jedes geöffnete Memo eine Anfrage bei der SEC auslöst.
+// SEC-Meldungen und Medienberichte. Geladen wird erst auf Knopfdruck.
 export default function WebsiteNewsPanel({runId,expanded=false}) {
   const [data,setData]=useState(null),[entries,setEntries]=useState([])
   const [reviewer,setReviewer]=useState(''),[conflicts,setConflicts]=useState('')
@@ -17,25 +16,30 @@ export default function WebsiteNewsPanel({runId,expanded=false}) {
   async function push(){setBusy(true);setError('');try{setResult(await api.websiteNewsPush(runId,{approved,publication_id:requestId,target_url:data.target_url,reviewer,conflicts,entries}))}catch(e){setError(e.message)}finally{setBusy(false)}}
 
   return <details className="lifecycle-card website-publish website-news" open={expanded}><summary>Auf TechThese veröffentlichen · Meldungen der letzten 30 Tage</summary>
-    <p>Pflichtveröffentlichungen bei der SEC als Grundlage. Überschrift und Zusammenfassung schreibst du in eigenen Worten; verlinkt wird die Originaleinreichung.</p>
+    <p>Pflichtveröffentlichungen bei der SEC und Medienberichte als Grundlage. Überschrift und Zusammenfassung schreibst du in eigenen Worten; verlinkt wird die Originalquelle. Die freigegebenen Meldungen erscheinen direkt auf der Unternehmensseite unter den Firmenangaben und vor den Analysen.</p>
     {error&&<div className="error" role="alert">{error}</div>}
     <button type="button" className="ghost" disabled={busy} onClick={load}>{busy&&!data?'Meldungen werden geladen …':data?'Erneut laden':'Meldungen laden'}</button>
     {data&&<>
       <p className="muted small">{data.name} ({data.ticker}) · {data.since} bis {data.until} · {entries.length} Entwürfe · Ziel: {data.target_url}</p>
-      {!entries.length&&<p>In diesem Zeitraum gibt es keine Einreichungen, die als Meldung infrage kommen. Eine leere Übertragung zeigt auf der Website „keine Ereignisse“.</p>}
-      <ol className="website-news-list">{entries.map((e,index)=><li key={e.date+e.category+index} className={e.include?'':'is-off'}>
+      {!entries.length&&<p>Es wurden keine passenden Meldungen geladen. Eine leere Übertragung ersetzt die bisherige Nachrichtenliste durch den Hinweis, dass aktuell keine geprüften Meldungen veröffentlicht sind.</p>}
+      {data.notes?.map(note=><p key={note} className="muted small" role="status">{note}</p>)}
+      {[['sec','Pflichtmeldungen bei der SEC',e=>e.category!=='medienbericht'],['media','Medienberichte',e=>e.category==='medienbericht']].map(([key,title,belongs])=>entries.some(belongs)&&<section key={key}>
+        <h4>{title}</h4>
+        {key==='media'&&<p className="muted small">Der Originaltitel ist nur ein Hinweis für dich. Veröffentlicht werden deine eigene Überschrift und Zusammenfassung mit Link zum Artikel. Das Datum bezeichnet die Erfassung durch das <a href="https://www.gdeltproject.org/" target="_blank" rel="noopener noreferrer">GDELT Project</a>; das Veröffentlichungsdatum bitte im Artikel prüfen.</p>}
+        <ol className="website-news-list">{entries.map((e,index)=>belongs(e)&&<li key={e.date+e.category+index} className={e.include?'':'is-off'}>
         <label className="website-news-pick"><input type="checkbox" checked={e.include} onChange={x=>edit(index,'include',x.target.checked)}/>{e.date} · {data.categories[e.category]} · <a href={e.source_url} target="_blank" rel="noopener noreferrer">{e.source} ↗</a></label>
-        {e.hint&&<p className="muted small">Titel der Anlage: {e.hint}</p>}
+        {e.hint&&<p className="muted small">{e.category==='medienbericht'?'Titel des Artikels':'Titel der Anlage'}: {e.hint}</p>}
         {e.include&&<><label>Überschrift in eigenen Worten<input value={e.headline} maxLength={180} onChange={x=>edit(index,'headline',x.target.value)}/></label>
           <label>Zusammenfassung · optional<textarea rows={2} maxLength={600} value={e.summary} onChange={x=>edit(index,'summary',x.target.value)}/></label></>}
       </li>)}</ol>
+      </section>)}
       <fieldset><legend>Prüfung</legend>
         <label>Geprüft von<input value={reviewer} maxLength={120} onChange={x=>{setReviewer(x.target.value);changed()}}/></label>
         <label>Interessenkonflikte · auch wenn keine bestehen<textarea rows={2} value={conflicts} minLength={20} onChange={x=>{setConflicts(x.target.value);changed()}}/></label>
       </fieldset>
-      <label className="website-approval"><input type="checkbox" checked={approved} disabled={!complete||busy} onChange={x=>setApproved(x.target.checked)}/>Ich habe die ausgewählten Meldungen gegen die Originaleinreichungen geprüft und gebe sie frei.</label>
+      <label className="website-approval"><input type="checkbox" checked={approved} disabled={!complete||busy} onChange={x=>setApproved(x.target.checked)}/>Ich habe die ausgewählten Meldungen gegen die Originalquellen geprüft, die Texte in eigenen Worten formuliert und gebe sie frei.</label>
       <button type="button" className="primary" disabled={busy||!approved||!complete} onClick={push}>{busy?'Übertragung läuft …':`${selected.length} ${selected.length===1?'Meldung':'Meldungen'} übertragen`}</button>
-      {result&&<p role="status">Übertragen: {result.items} {result.items===1?'Meldung':'Meldungen'}. <a href={data.target_url+'/unternehmen/'+encodeURIComponent(data.ticker)} target="_blank" rel="noopener noreferrer">Unternehmensseite ansehen ↗</a></p>}
+      {result&&<p role="status">Übertragen: {result.items} {result.items===1?'Meldung':'Meldungen'}. <a href={data.target_url+'/unternehmen/'+encodeURIComponent(data.ticker)+'#nachrichten'} target="_blank" rel="noopener noreferrer">Nachrichten auf der Unternehmensseite ansehen ↗</a></p>}
     </>}
   </details>
 }
