@@ -101,3 +101,37 @@ Investor-Relations-Seite des Unternehmens, die ohnehin schon als Katalogquelle d
 
 Der Veröffentlichungsvertrag weist Pakete mit gesperrten Quellen seit `f0b112b` mit
 Status 422 zurück; die Meldung nennt die beanstandete Fundstelle.
+
+## Meldungen der letzten 30 Tage
+
+Dieselbe Quelle liefert die Meldungen auf den Unternehmensseiten, über
+`https://data.sec.gov/submissions/CIK##########.json`. Die Zuordnung steht in
+`integrations/evaluating-stocks/website_news_core.py`:
+
+| Einreichung | Kategorie |
+| --- | --- |
+| 8-K Item 2.02 | Quartalszahlen |
+| 8-K Item 1.01, 1.02 | Wesentliche Verträge |
+| 8-K Item 2.01, Form 425 | Übernahme & Fusion |
+| 8-K Item 2.05 | Restrukturierung |
+| 8-K Item 5.02 | Vorstand & Management |
+| 8-K Item 5.07 | Hauptversammlung |
+| 8-K Item 7.01, Form 6-K | Pressemitteilung |
+| 8-K Item 8.01 | Sonstige Meldung |
+| Form 4, Form 144 | Insidergeschäfte (vorausgewählt abgewählt) |
+| Schedule 13D, 13G | Großaktionäre |
+
+Hat ein 8-K mehrere Items, gilt die Reihenfolge der Tabelle. Ein 8-K nur mit Item 9.01
+(Anlagen) und Formulare wie S-8 oder 10-Q sind keine Meldung. Änderungsmeldungen (`/A`)
+zählen zur Kategorie des Originals. Gleiche Kategorie am selben Tag wird zusammengefasst:
+am 2. November 2026 reichte Marvell zehn Form 425 zu einer Übernahme ein, daraus wird eine
+Meldung.
+
+Die eigentliche Nachricht steht oft in der Anlage, nicht im Formulartyp. Das 8-K von
+Marvell vom 2. November 2026 trägt Item 2.02 (Zahlen); die angehängte Pressemitteilung ist
+überschrieben mit „MARVELL AND LUMENTUM TO COMBINE, CREATING A CATEGORY LEADER IN AI
+CONNECTIVITY". Deshalb zeigt der Entwurf diesen Titel als Hinweis für die Redaktion.
+
+Nicht bei der SEC registrierte Unternehmen haben hier keine Daten. Und manche Firmen melden
+über die SEC nur wenig: Arqit hatte zwischen dem 9. Oktober und 9. November 2026 dort
+ausschließlich Insidergeschäfte. Für solche Fälle bleibt die Investor-Relations-Seite die Quelle.

@@ -44,3 +44,32 @@ and data limitations. The local draft preview shows these fields before approval
 The full edited memo remains part of the article. Older articles remain readable;
 they need a reviewed republication to gain the new overview data. Missing numbers
 are not replaced by zero, and annual costs are not added to twelve-month cash flows.
+
+## Company news
+
+Company pages show a reviewed digest of the last 30 days, built from SEC EDGAR filings.
+In Evaluating Stocks open a memo and use **„Auf TechThese veröffentlichen · Meldungen der
+letzten 30 Tage"**: the draft is loaded only on request, insider trades start deselected,
+and the title of an attached press release (exhibit 99.1) is shown as a hint. Headlines and
+summaries are written by the editor in their own words; each entry links to the original
+filing.
+
+The bridge needs a contact address for the SEC `User-Agent`, which the SEC requires.
+Set it once; later runs of the configurator keep it:
+
+```
+python3 integrations/configure.py --app "/Pfad/zu/Evaluate stocks" --url "https://techthese.de" --sec-contact kontakt@example.org
+```
+
+`POST /api/news` uses the same `Authorization: Bearer <PUBLISH_TOKEN>` as `/api/import` and a
+120 kB limit. The packet is `publication_id`, `ticker`, `editorial_review` (same rules as
+articles) and up to 40 `items` of `date`, `category`, `headline`, `summary`, `source`,
+`source_url` (HTTPS only) and optional `form`. The source policy applies: Yahoo Finance,
+NewsAPI and the other blocked providers are rejected with 422. A repeated `publication_id`
+with identical content returns 200, with different content 409; a new id replaces the
+company's digest. `GET /api/import` reports `capabilities.company_news: true`.
+
+Without a published digest the section does not appear. A digest with no entries shows
+that nothing reportable happened in the window. The section never takes the company page
+down: if the `company_news` table is missing because migration 0004 has not been applied
+yet, the page renders without it.

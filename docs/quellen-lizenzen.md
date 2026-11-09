@@ -24,6 +24,7 @@ Veröffentlichung gehört die Prüfung in fachkundige Hände.
 | --- | --- |
 | Yahoo Finance, auch über `yfinance` | Weiterveröffentlichung nicht gestattet; der Zugriff erfolgt über eine nicht dokumentierte Schnittstelle |
 | Alpha Vantage, Finnhub, Twelve Data, Financial Modeling Prep | die kostenlosen Stufen erlauben keine öffentliche Anzeige; externe Anzeige beginnt bei kostenpflichtigen Stufen |
+| NewsAPI.org | der Gratis-Plan ist auf Entwicklung und Tests beschränkt; Produktivbetrieb ist ausdrücklich untersagt |
 | FRED (St. Louis Fed) | der Public-Domain-Status gilt für persönliche, Bildungs- und nicht-kommerzielle Zwecke; die API-Bedingungen untersagen Speichern, Zwischenspeichern und Weitergabe an Dritte; die Urheberrechte der einzelnen Reihen bleiben bei deren Eigentümern |
 
 FRED ist der am leichtesten zu übersehende Fall: die Quelle wirkt wie offene

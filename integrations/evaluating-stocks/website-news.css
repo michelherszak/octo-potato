@@ -1,0 +1,6 @@
+/* TechThese · Meldungen der letzten 30 Tage */
+.website-news-list{display:grid;gap:10px;margin:12px 0;padding:0;list-style:none}
+.website-news-list li{display:grid;gap:6px;border:1px solid var(--border,#ddd);border-radius:8px;padding:10px 12px}
+.website-news-list li.is-off{opacity:.6}
+.website-news-pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-weight:600}
+.website-news-pick a{font-weight:400}

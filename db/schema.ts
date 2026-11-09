@@ -123,3 +123,11 @@ export const companyFollows = sqliteTable('company_follows', {
   index('company_follows_user').on(table.userId),
   index('company_follows_ticker').on(table.ticker),
 ]);
+
+// Ein freigegebener Meldungs-Digest je Unternehmen; ein neuer ersetzt den vorherigen.
+export const companyNews = sqliteTable('company_news', {
+  ticker: text('ticker').primaryKey(),
+  publicationId: text('publication_id').notNull(),
+  payload: text('payload').notNull(),
+  publishedAt: integer('published_at').notNull(),
+}, table => [uniqueIndex('company_news_publication').on(table.publicationId)]);

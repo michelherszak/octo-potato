@@ -3,6 +3,7 @@ import {topics} from './catalog.ts';
 import {reviewSchema} from './publication-policy.ts';
 import {memoOverviewSchema} from './memo-overview.ts';
 import {findBlockedSources} from './source-policy.ts';
+import {NEWS_CATEGORY_IDS} from './news-categories.ts';
 const safeUrl=z.string().url().max(2000).refine(s=>/^https?:\/\//.test(s),'Nur HTTP(S)-Quellen');
 const date=z.string().datetime({offset:true});
 export const articleSchema=z.object({
@@ -25,6 +26,35 @@ export const importSchema=z.object({publication_id:z.string().uuid(),expected_re
       ctx.addIssue({code:z.ZodIssueCode.custom,path:['article',...finding.path.split(/[.[]/).filter(Boolean).map(part=>part.replace(']',''))],
         message:`${finding.label} ist als Quelle gesperrt (${finding.reason}). Gefunden: "${finding.value}". Zulässige Quellen stehen in docs/quellen-lizenzen.md.`});
   });
+// Meldungen der letzten Wochen zu einem Unternehmen. Überschrift und Zusammenfassung sind
+// eigene Worte der Redaktion; verlinkt wird die Primärquelle, kein Medienartikel.
+const newsDay=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(day=>!Number.isNaN(Date.parse(day+'T00:00:00Z')),'Ungültiges Datum');
+export const newsItemSchema=z.object({
+  date:newsDay,category:z.enum(NEWS_CATEGORY_IDS),
+  headline:z.string().trim().min(8).max(180),summary:z.string().trim().max(600).default(''),
+  source:z.string().trim().min(3).max(200),
+  source_url:z.string().url().max(2000).refine(s=>s.startsWith('https://'),'Nur HTTPS-Quellen'),
+  form:z.string().max(20).optional(),
+}).strict();
+export const newsDigestSchema=z.object({
+  publication_id:z.string().uuid(),
+  ticker:z.string().trim().toUpperCase().regex(/^[A-Z0-9.-]{1,16}$/),
+  editorial_review:reviewSchema.refine(r=>r.advertising==='none','Bezahlte und Affiliate-Inhalte sind bis zur gesonderten Prüfung gesperrt.'),
+  items:z.array(newsItemSchema).max(40),
+}).strict().superRefine((value,ctx)=>{
+  // Meldungen aus der Zukunft sind ein Datenfehler, kein Ereignis.
+  const tomorrow=Date.now()+86_400_000;
+  value.items.forEach((item,index)=>{
+    if(Date.parse(item.date+'T00:00:00Z')>tomorrow)
+      ctx.addIssue({code:z.ZodIssueCode.custom,path:['items',index,'date'],message:'Das Datum liegt in der Zukunft.'});
+  });
+  for(const finding of findBlockedSources(value))
+    ctx.addIssue({code:z.ZodIssueCode.custom,path:finding.path.split(/[.[]/).filter(Boolean).map(part=>part.replace(']','')),
+      message:`${finding.label} ist als Quelle gesperrt (${finding.reason}). Gefunden: "${finding.value}". Zulässige Quellen stehen in docs/quellen-lizenzen.md.`});
+});
+export type NewsDigest=z.infer<typeof newsDigestSchema>;
+export type NewsItem=z.infer<typeof newsItemSchema>;
+
 export type Article=z.infer<typeof articleSchema> & {published_at?:string;updated_at?:string;revision?:number;example?:boolean};
 export const storedArticleSchema=articleSchema.extend({published_at:date.optional(),updated_at:date.optional(),revision:z.number().int().positive().optional(),example:z.boolean().optional(),notification_requested:z.boolean().optional()});
 export function metadataFor(a:Article,base:string) {const url=new URL('/analysen/'+a.slug,base).href;return {title:a.title+' | TechThese',description:a.description,alternates:{canonical:url},openGraph:{type:'article' as const,title:a.title,description:a.description,url,locale:'de_DE',siteName:'TechThese',publishedTime:a.published_at,modifiedTime:a.updated_at},robots:{index:!a.example,follow:true}};}

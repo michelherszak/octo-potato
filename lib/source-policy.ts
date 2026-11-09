@@ -13,6 +13,8 @@ export const BLOCKED_SOURCES: ReadonlyArray<{label:string;reason:string;patterns
     patterns:[/twelvedata/i,/twelve\s+data/i]},
   {label:'Financial Modeling Prep',reason:'Anzeige in Mehrbenutzer-Anwendungen vertraglich ausgeschlossen',
     patterns:[/financialmodelingprep/i,/financial\s+modeling\s+prep/i]},
+  {label:'NewsAPI',reason:'Gratis-Plan nur für Entwicklung und Tests, Produktivbetrieb untersagt',
+    patterns:[/newsapi\.org/i,/\bnewsapi\b/i]},
 ];
 
 export function blockedSource(value:unknown){

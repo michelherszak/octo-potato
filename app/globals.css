@@ -84,6 +84,17 @@
 .account-mail{display:grid;gap:10px;align-content:start}
 .account-mail .auth-check{font-size:13px;color:var(--ink)}
 .account-mail small{font-size:11px}
+/* Meldungen der letzten Wochen auf der Unternehmensseite. */
+.company-news{margin:8px 0 46px}
+.news-list{display:grid;gap:0;margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.news-list li{display:grid;gap:5px;padding:16px 0;border-bottom:1px solid var(--line)}
+.news-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:11px;color:var(--muted)}
+.news-category{border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-weight:600;color:var(--ink);background:var(--bg)}
+.news-list h3{margin:0;font-size:16px;line-height:1.35}
+.news-list p{margin:0;font-size:13px;line-height:1.55}
+.news-source{font-size:11px!important;color:var(--muted)}
+.news-source a{color:var(--accent);font-weight:600}
+.news-note{margin:12px 0 0;font-size:11px;color:var(--muted)}
 /* Pflichthinweis unter jeder Veröffentlichung. */
 .disclaimer{margin:30px 0 0;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--bg);padding:16px 18px}
 .disclaimer-title{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}

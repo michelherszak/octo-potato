@@ -46,7 +46,7 @@ Die Bridge im Ordner `integrations/` enthält genau die ergänzenden Dateien und
 ```sh
 python3 integrations/install.py --app "/Pfad/zu/Evaluate stocks" --check
 python3 integrations/install.py --app "/Pfad/zu/Evaluate stocks"
-python3 integrations/configure.py --app "/Pfad/zu/Evaluate stocks" --url "http://localhost:5180"
+python3 integrations/configure.py --app "/Pfad/zu/Evaluate stocks" --url "http://localhost:5180" --sec-contact kontakt@example.org
 ```
 
 Der Konfigurator fragt den Schlüssel verdeckt ab. Er schreibt nur in die ignorierte `data/website_settings.json`. Für eine private Sites-Website zusätzlich `--sites` verwenden und deren vorhandenen Service-Zugang konfigurieren. Zugangsdaten nie in Git, öffentliche Browserdateien oder URLs schreiben.
