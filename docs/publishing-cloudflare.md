@@ -27,6 +27,10 @@ Retries preserve their publication identity, notification choice and revisions; 
 New articles notify confirmed subscribers. Revisions notify only when the publisher
 sets `notify_subscribers: true`. The response reports `notifications_queued`.
 
+Only sources that are free to access **and** permit republication may be cited. Yahoo
+Finance (including `yfinance`), FRED and the free tiers of the commercial market-data
+APIs do not qualify. See [`quellen-lizenzen.md`](quellen-lizenzen.md).
+
 The eight topic categories remain predefined. New articles and company links use
 the selected categories automatically. Adding a category requires coordinated
 changes to the website and the private publisher.

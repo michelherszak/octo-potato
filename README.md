@@ -24,6 +24,9 @@ cp .env.example .dev.vars
 
 In `.dev.vars` einen zufälligen `PUBLISH_TOKEN` mit mindestens 32 Zeichen eintragen. Das ist derselbe Veröffentlichungsschlüssel wie im privaten Publisher. `.dev.vars` bleibt außerhalb von Git.
 
+Welche Quellen veröffentlicht werden dürfen, steht in
+[`docs/quellen-lizenzen.md`](docs/quellen-lizenzen.md).
+
 Die Einrichtung der E-Mail-/Passwort-Konten mit Supabase Auth ist in
 [`docs/supabase-auth.md`](docs/supabase-auth.md) beschrieben. E-Mail-Bestätigung und
 eigenes SMTP sind vor einem öffentlichen Start verpflichtend.
