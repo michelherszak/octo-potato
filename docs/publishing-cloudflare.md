@@ -45,6 +45,27 @@ The full edited memo remains part of the article. Older articles remain readable
 they need a reviewed republication to gain the new overview data. Missing numbers
 are not replaced by zero, and annual costs are not added to twelve-month cash flows.
 
+## New article or update
+
+Each evaluation in Evaluating Stocks becomes a **new article** by default. Its address
+carries the evaluation date (`mrvl-analyse-2026-11-09`) and its title the month, so
+several analyses of one company stay online side by side and keep distinct titles. A new
+article notifies everyone following the company.
+
+Choose **update** in the publish panel only to correct an existing article. The panel lists
+the company's published articles (`GET /api/import?ticker=MRVL`, same authorisation) and
+replaces the chosen one with a new revision; earlier revisions stay in `article_versions`.
+Subscribers are informed about an update only if that is ticked explicitly.
+
+The bridge refuses both mismatches with 409, already in the preview: "new" on an address
+that is taken, and "update" on an address that does not exist. A new article can therefore
+never silently overwrite an older one. Drafts saved before this change keep their address;
+if it is already taken they open as an update.
+
+Company pages list all analyses newest first. An older analysis shows a note linking to
+the newest one; what counts is the first publication date, so correcting an old analysis
+does not make it the newer one.
+
 ## Company news
 
 Company pages show a reviewed digest of the last 30 days, built from SEC EDGAR filings.

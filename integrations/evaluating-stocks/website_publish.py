@@ -47,6 +47,8 @@ CURATED = {
 class EditorialIn(BaseModel):
     model_config = ConfigDict(extra='forbid')
     slug: str = Field(pattern=r'^[a-z0-9]+(?:-[a-z0-9]+)*$', min_length=3, max_length=150)
+    # new: eigener Beitrag mit eigener Adresse. update: neue Fassung eines bestehenden Beitrags.
+    mode: str = Field(default='new', pattern=r'^(new|update)$')
     title: str = Field(min_length=5,max_length=180)
     description: str = Field(min_length=20,max_length=320)
     author: str = Field(min_length=2,max_length=120)
@@ -96,6 +98,38 @@ class PushIn(BaseModel):
     expected_revision: int = Field(default=0,ge=0)
     target_url: str = Field(default='',max_length=2000)
 
+MONTHS=('Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember')
+
+def _month(value):
+    try:moment=datetime.fromisoformat(str(value).replace('Z','+00:00'))
+    except ValueError:moment=datetime.now(timezone.utc)
+    return f'{MONTHS[moment.month-1]} {moment.year}'
+
+def _base_slug(symbol):
+    return ''.join(c if c.isalnum() and c.isascii() else '-' for c in str(symbol).lower()).strip('-')+'-analyse'
+
+def _mode_problem(mode,revision):
+    """Verhindert, dass ein neuer Beitrag still einen bestehenden überschreibt, und umgekehrt."""
+    if mode=='new' and revision>0:
+        return 'Unter dieser Adresse gibt es bereits einen Beitrag. Wähle „Aktualisierung“ oder eine neue Adresse.'
+    if mode=='update' and revision==0:
+        return 'Unter dieser Adresse gibt es noch keinen Beitrag. Wähle „Neuer Beitrag“ oder einen bestehenden Beitrag.'
+    return ''
+
+def _existing_articles(symbol):
+    """Bestehende Analysen auf der Website; ohne Verbindung eine leere Liste."""
+    settings=_settings()
+    if not symbol or not(settings.get('url') and settings.get('token')):return []
+    try:
+        headers={'Authorization':'Bearer '+settings['token']}
+        if settings.get('sites_service_token'):headers['OAI-Sites-Authorization']='Bearer '+settings['sites_service_token']
+        response=httpx.get(_target(settings)+'/api/import',params={'ticker':symbol},headers=headers,timeout=15,follow_redirects=False)
+        response.raise_for_status()
+        return [{'slug':str(a['slug']),'title':str(a.get('title') or a['slug']),'revision':int(a.get('revision') or 0),
+                 'published_at':a.get('published_at')} for a in response.json().get('articles',[])]
+    except (httpx.HTTPError,ValueError,KeyError,TypeError):
+        return []
+
 def _settings():
     return read_json(SETTINGS,{})
 
@@ -144,7 +178,7 @@ def readable_memo(run):
 
 def export_article(run, editorial):
     e=editorial.model_dump() if isinstance(editorial,EditorialIn) else dict(editorial)
-    for field in ('rights_basis', 'conflicts', 'advertising', 'advertising_details'):
+    for field in ('rights_basis', 'conflicts', 'advertising', 'advertising_details', 'mode'):
         e.pop(field, None)
     # Keine pauschale Quelle: zitiert wird, woher die Zahlen belegt stammen, plus was die
     # Redaktion ergänzt. Eine feste Vorgabe wäre eine behauptete, keine belegte Herkunft.
@@ -207,14 +241,22 @@ def draft(run_id:str):
     run=evaluation.get_run(run_id)
     if not run:raise HTTPException(404,'Auswertung nicht gefunden')
     symbol=run.get('yahoo_symbol') or run.get('ticker') or ''
-    slug=''.join(c if c.isalnum() and c.isascii() else '-' for c in symbol.lower()).strip('-')+'-analyse'
-    title=f"{run.get('name')}: Technologie, Zahlen und die These zur Aktie"[:180]
+    existing=_existing_articles(symbol)
+    # Eine neue Auswertung wird ein eigener Beitrag; das Datum hält ältere Analysen erreichbar.
+    slug=_base_slug(symbol)+'-'+str(run.get('created_at') or datetime.now(timezone.utc).isoformat())[:10]
+    # Mehrere Analysen derselben Firma brauchen unterscheidbare Titel, auch für Suchmaschinen.
+    title=f"{run.get('name')}: Technologie, Zahlen und die These zur Aktie · {_month(run.get('created_at'))}"[:180]
     e={'slug':slug,'title':title,'description':f"Analyse und Memo zu {run.get('name')}: Geschäftsmodell, Bewertung, Wachstum und Risiken verständlich erklärt – mit Kennzahlen und Quellen.",'author':'Michel Herszak',
        'topics':CURATED.get(symbol,[]),'thesis':str((run.get('plain_text') or {}).get('core_message') or 'Bitte ergänze hier deine persönliche Analyse und These.'),
-       'memo':readable_memo(run),'original_analysis_at':'','additional_sources':[]}
+       'memo':readable_memo(run),'original_analysis_at':'','additional_sources':[],'mode':'new'}
+    new_slug=e['slug']
     saved=read_json(DRAFTS,{}).get(run_id)
-    if saved:e=saved['editorial']
-    return {'eligible':eligible(run),'editorial':e,'article':export_article(run,e),'topics':TOPICS,'connection':status()}
+    if saved:
+        e=dict(saved['editorial'])
+        # Ältere Entwürfe kennen keinen Modus: eine bereits vergebene Adresse ist eine Aktualisierung.
+        e.setdefault('mode','update' if e.get('slug') in {a['slug'] for a in existing} else 'new')
+    return {'eligible':eligible(run),'editorial':e,'article':export_article(run,e),'topics':TOPICS,'connection':status(),
+            'existing':existing,'new_slug':new_slug}
 
 @router.post('/runs/{run_id}/preview')
 def preview(run_id:str,editorial:EditorialIn):
@@ -237,7 +279,8 @@ def preview(run_id:str,editorial:EditorialIn):
             connected=True
         except (httpx.HTTPError,ValueError,KeyError):
             pass
-    return {'article':export_article(run,editorial),'eligible':eligible(run),'revision':revision,'connected':connected,'connection':status()}
+    warning=_mode_problem(editorial.mode,revision) if connected else ''
+    return {'article':export_article(run,editorial),'eligible':eligible(run),'revision':revision,'connected':connected,'connection':status(),'warning':warning}
 
 @router.post('/runs/{run_id}/push')
 def push(run_id:str,body:PushIn):
@@ -255,6 +298,8 @@ def push(run_id:str,body:PushIn):
     except ValueError as exc:raise HTTPException(400,str(exc)) from exc
     if body.target_url.rstrip('/') != url:raise HTTPException(409,'Website-Ziel hat sich geändert. Bitte den Entwurf erneut prüfen und freigeben.')
     if not settings.get('token'):raise HTTPException(400,'Veröffentlichungsschlüssel fehlt')
+    problem=_mode_problem(body.editorial.mode,body.expected_revision)
+    if problem:raise HTTPException(409,problem)
     article=export_article(run,body.editorial)
     if not article.get('sources'):raise HTTPException(409,'Bitte mindestens eine Quelle angeben, aus der die Zahlen tatsächlich stammen.')
     review={key:getattr(body.editorial,key).strip() for key in ('rights_basis','conflicts','advertising','advertising_details')}

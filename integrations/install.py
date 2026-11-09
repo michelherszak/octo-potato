@@ -40,6 +40,7 @@ if 'import WebsiteNewsPanel' not in source:
 path=root/'web/src/styles.css';source=current(path)
 if '.website-publish label' not in source:source=source+'\n'+(assets/'website.css').read_text()
 if '.website-news-list' not in source:source=source+'\n'+(assets/'website-news.css').read_text()
+if '.website-mode' not in source:source=source+'\n'+(assets/'website-mode.css').read_text()
 updates[path]=source
 path=root/'.gitignore';source=path.read_text()
 for entry in ['data/website_settings.json','data/website_pushes.json','data/website_drafts.json','data/website_news_pushes.json','data/website_sec_tickers.json']:
