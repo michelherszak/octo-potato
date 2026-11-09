@@ -30,6 +30,9 @@ FRED ist der am leichtesten zu übersehende Fall: die Quelle wirkt wie offene
 Behördendaten, ist für eine Website, die Zahlen speichert und veröffentlicht, aber
 nicht nutzbar.
 
+Die konkrete Zuordnung der Memo-Kennzahlen auf EDGAR-Tags steht in
+[`edgar-kennzahlen.md`](edgar-kennzahlen.md).
+
 ## Im Veröffentlichungsvertrag
 
 Das Feld `editorial_review.rights_basis` benennt die Rechtegrundlage. Es sollte genau

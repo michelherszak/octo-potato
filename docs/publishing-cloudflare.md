@@ -29,7 +29,7 @@ sets `notify_subscribers: true`. The response reports `notifications_queued`.
 
 Only sources that are free to access **and** permit republication may be cited. Yahoo
 Finance (including `yfinance`), FRED and the free tiers of the commercial market-data
-APIs do not qualify. See [`quellen-lizenzen.md`](quellen-lizenzen.md).
+APIs do not qualify. See [`quellen-lizenzen.md`](quellen-lizenzen.md); the tag mapping for replacing yfinance is in [`edgar-kennzahlen.md`](edgar-kennzahlen.md).
 
 The eight topic categories remain predefined. New articles and company links use
 the selected categories automatically. Adding a category requires coordinated
