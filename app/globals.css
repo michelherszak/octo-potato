@@ -201,3 +201,14 @@
 html{scroll-padding-top:110px}
 @media(max-width:800px){html{scroll-padding-top:165px}}
 .contents,.topic-sidebar,.index-rail{top:116px}
+
+/* Tabellen in importierten Analysen bleiben Teil des ruhigen Leselayouts. */
+.prose-table{max-width:100%;overflow-x:auto;margin:26px 0;border:1px solid var(--line);border-radius:10px;background:var(--paper);overscroll-behavior-x:contain}
+.prose-table:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+.prose-table table{width:100%;min-width:460px;border-collapse:collapse;font-size:14px;line-height:1.65;overflow-wrap:normal}
+.prose-table th,.prose-table td{padding:14px 16px;text-align:left;vertical-align:top;overflow-wrap:break-word;font-variant-numeric:tabular-nums}
+.prose-table th{background:var(--bg);font-size:12px;font-weight:600;color:var(--muted)}
+.prose-table td{border-top:1px solid var(--line)}
+.prose-table td:first-child{font-weight:600}
+.prose-table code{font-size:.9em}
+@media(max-width:640px){.prose-table th,.prose-table td{padding:11px 12px}.prose-table table{font-size:13px}}

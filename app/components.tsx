@@ -1,5 +1,6 @@
 import type {Article} from '@/lib/contract';
 import {topics,topicName} from '@/lib/catalog';
+export {Prose} from './Prose';
 export function Icon({kind='atom',size=24}:{kind?:string;size?:number}) {
   const paths:Record<string,React.ReactNode>={
     atom:<><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1"/></>,
@@ -19,5 +20,3 @@ export function ArticleRow({article:a,headingLevel='h3'}:{article:Article;headin
 }
 export function ArticleCard({article:a,showArtwork=true}:{article:Article;showArtwork?:boolean}) {const topic=topics.find(t=>t.id===a.topics[0]);return <article className="article-card">{showArtwork&&<a className="artwork" href={'/analysen/'+a.slug} aria-label={a.title}><div className="diagram"><Icon kind={topic?.icon} size={64}/><span className="diagram-orbit"/><span className="diagram-dot"/><span className="diagram-label">{a.ticker||topic?.short}</span></div><span className="artwork-kind">{a.kind}</span></a>}<div className="article-card-text"><Tags ids={a.topics}/><h2><a href={'/analysen/'+a.slug}>{a.title}</a></h2><p>{a.description}</p><div className="byline"><span>{a.author}</span><span>{a.example?'Beispielbeitrag':dateText(a.published_at||a.data_as_of)}</span></div><a className="read-link" href={'/analysen/'+a.slug}>Beitrag lesen <span>↗</span></a></div></article>;}
 export function dateText(d:string){return new Date(d).toLocaleDateString('de-DE',{day:'numeric',month:'long',year:'numeric'});}
-function inline(text:string) {return text.split(/(\*\*[^*]+\*\*)/g).map((p,i)=>p.startsWith('**')?<strong key={i}>{p.slice(2,-2)}</strong>:p);}
-export function Prose({text}:{text:string}) {return <div className="prose">{text.replace(/\r/g,'').split(/\n\s*\n/).filter(Boolean).map((block,i)=>{const lines=block.split('\n');if(/^#{1,3} /.test(block)){const [first,...rest]=lines;return <section key={i}><h3>{inline(first.replace(/^#{1,3} /,''))}</h3>{rest.length>0&&<p>{inline(rest.join(' '))}</p>}</section>;}if(lines.every(l=>/^[-*] /.test(l)))return <ul key={i}>{lines.map((l,j)=><li key={j}>{inline(l.slice(2))}</li>)}</ul>;return <p key={i}>{inline(block)}</p>;})}</div>;}
