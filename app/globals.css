@@ -73,6 +73,11 @@
 .latest-panel .read-link{margin-top:14px}
 @media (max-width:900px){.index-layout{grid-template-columns:1fr;gap:28px}.index-rail{position:static}}
 
+/* Pflichthinweis unter jeder Veröffentlichung. */
+.disclaimer{margin:30px 0 0;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--bg);padding:16px 18px}
+.disclaimer-title{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+.disclaimer p:last-child{margin:0;font-size:12px;line-height:1.6;color:var(--muted)}
+.disclaimer a{color:var(--accent);font-weight:600}
 /* Freier Werbeplatz als einladender Platzhalter. */
 .promo-card{display:block}
 .promo-card-label{display:block;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
