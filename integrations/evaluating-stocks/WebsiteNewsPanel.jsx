@@ -3,7 +3,7 @@ import {api} from '../api.js'
 
 // Meldungen der letzten 30 Tage aus SEC EDGAR. Geladen wird erst auf Knopfdruck,
 // damit nicht jedes geöffnete Memo eine Anfrage bei der SEC auslöst.
-export default function WebsiteNewsPanel({runId}) {
+export default function WebsiteNewsPanel({runId,expanded=false}) {
   const [data,setData]=useState(null),[entries,setEntries]=useState([])
   const [reviewer,setReviewer]=useState(''),[conflicts,setConflicts]=useState('')
   const [approved,setApproved]=useState(false),[requestId,setRequestId]=useState(()=>crypto.randomUUID())
@@ -16,7 +16,7 @@ export default function WebsiteNewsPanel({runId}) {
   async function load(){setBusy(true);setError('');try{const d=await api.websiteNews(runId);setData(d);setEntries(d.drafts);changed()}catch(e){setError(e.message)}finally{setBusy(false)}}
   async function push(){setBusy(true);setError('');try{setResult(await api.websiteNewsPush(runId,{approved,publication_id:requestId,target_url:data.target_url,reviewer,conflicts,entries}))}catch(e){setError(e.message)}finally{setBusy(false)}}
 
-  return <details className="lifecycle-card website-publish website-news"><summary>Auf TechThese veröffentlichen · Meldungen der letzten 30 Tage</summary>
+  return <details className="lifecycle-card website-publish website-news" open={expanded}><summary>Auf TechThese veröffentlichen · Meldungen der letzten 30 Tage</summary>
     <p>Pflichtveröffentlichungen bei der SEC als Grundlage. Überschrift und Zusammenfassung schreibst du in eigenen Worten; verlinkt wird die Originaleinreichung.</p>
     {error&&<div className="error" role="alert">{error}</div>}
     <button type="button" className="ghost" disabled={busy} onClick={load}>{busy&&!data?'Meldungen werden geladen …':data?'Erneut laden':'Meldungen laden'}</button>

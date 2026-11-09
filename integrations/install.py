@@ -11,6 +11,8 @@ updates={
     root/'backend/app/website_publish.py':(assets/'website_publish.py').read_text(),
     root/'web/src/components/WebsiteMemoPreview.jsx':(assets/'WebsiteMemoPreview.jsx').read_text(),
     root/'web/src/components/WebsitePublishPanel.jsx':(assets/'WebsitePublishPanel.jsx').read_text(),
+    root/'backend/app/website_editorial.py':(assets/'website_editorial.py').read_text(),
+    root/'backend/app/website_research.py':(assets/'website_research.py').read_text(),
     root/'backend/app/website_news_core.py':(assets/'website_news_core.py').read_text(),
     root/'backend/app/website_news.py':(assets/'website_news.py').read_text(),
     root/'web/src/components/WebsiteNewsPanel.jsx':(assets/'WebsiteNewsPanel.jsx').read_text(),
@@ -24,19 +26,29 @@ def insert(relative,anchor,value,marker):
     if anchor not in source:p.error('Unsupported version: missing integration point in '+relative)
     updates[path]=source.replace(anchor,anchor+value,1)
 insert('backend/app/main.py','app = FastAPI(title="Evaluate Stocks", version="0.1.0")','\nfrom .website_publish import router as website_router\napp.include_router(website_router)','from .website_publish import router')
+insert('web/src/api.js','export const api = {',"\n  websiteResearch: (runId) => post(`/website/runs/${encodeURIComponent(runId)}/research`),\n  websiteEditorialSuggestion: (runId, text) => post(`/website/runs/${encodeURIComponent(runId)}/editorial-suggestion`, text),",'websiteResearch:')
 insert('backend/app/main.py','app.include_router(website_router)','\nfrom .website_news import router as website_news_router\napp.include_router(website_news_router)','from .website_news import router')
 insert('web/src/api.js','export const api = {',"\n  websiteNews: (id) => request(`/website/runs/${encodeURIComponent(id)}/news`),\n  websiteNewsPush: (id, body) => post(`/website/runs/${encodeURIComponent(id)}/news`, body),",'websiteNews:')
 insert('web/src/api.js','export const api = {',"\n  websiteStatus: () => request('/website/status'),\n  websiteDraft: (id) => request(`/website/runs/${encodeURIComponent(id)}/draft`),\n  websitePreview: (id, body) => post(`/website/runs/${encodeURIComponent(id)}/preview`, body),\n  websitePush: (id, body) => post(`/website/runs/${encodeURIComponent(id)}/push`, body),",'websiteDraft:')
-path=root/'web/src/components/MemoDialog.jsx';source=current(path)
-if 'import WebsitePublishPanel' not in source:
-    anchor='<FinancialEvidence run={run} />'
-    if anchor not in source:p.error('Unsupported MemoDialog version')
-    updates[path]="import WebsitePublishPanel from './WebsitePublishPanel.jsx'\n"+source.replace(anchor,anchor+'\n          <WebsitePublishPanel key={`website-${run.run_id}`} runId={run.run_id} />',1)
-path=root/'web/src/components/MemoDialog.jsx';source=current(path)
-if 'import WebsiteNewsPanel' not in source:
-    anchor='<WebsitePublishPanel key={`website-${run.run_id}`} runId={run.run_id} />'
-    if anchor not in source:p.error('Unsupported MemoDialog version')
-    updates[path]="import WebsiteNewsPanel from './WebsiteNewsPanel.jsx'\n"+source.replace(anchor,anchor+'\n          <WebsiteNewsPanel key={`website-news-${run.run_id}`} runId={run.run_id} />',1)
+# Neuere Versionen zeigen das Panel auf der Arbeitsseite statt im Memo-Dialog.
+workspace=root/'web/src/components/WorkspacePages.jsx'
+if workspace.exists() and 'import WebsitePublishPanel' in current(workspace):
+    source=current(workspace)
+    if 'import WebsiteNewsPanel' not in source:
+        anchor='<WebsitePublishPanel key={runId} runId={runId} expanded />'
+        if anchor not in source:p.error('Unsupported WorkspacePages version')
+        updates[workspace]="import WebsiteNewsPanel from './WebsiteNewsPanel.jsx'\n"+source.replace(anchor,anchor+'<WebsiteNewsPanel key={`news-${runId}`} runId={runId} expanded />',1)
+else:
+    path=root/'web/src/components/MemoDialog.jsx';source=current(path)
+    if 'import WebsitePublishPanel' not in source:
+        anchor='<FinancialEvidence run={run} />'
+        if anchor not in source:p.error('Unsupported MemoDialog version')
+        updates[path]="import WebsitePublishPanel from './WebsitePublishPanel.jsx'\n"+source.replace(anchor,anchor+'\n          <WebsitePublishPanel key={`website-${run.run_id}`} runId={run.run_id} />',1)
+    source=current(path)
+    if 'import WebsiteNewsPanel' not in source:
+        anchor='<WebsitePublishPanel key={`website-${run.run_id}`} runId={run.run_id} />'
+        if anchor not in source:p.error('Unsupported MemoDialog version')
+        updates[path]="import WebsiteNewsPanel from './WebsiteNewsPanel.jsx'\n"+source.replace(anchor,anchor+'\n          <WebsiteNewsPanel key={`website-news-${run.run_id}`} runId={run.run_id} />',1)
 path=root/'web/src/styles.css';source=current(path)
 if '.website-publish label' not in source:source=source+'\n'+(assets/'website.css').read_text()
 if '.website-news-list' not in source:source=source+'\n'+(assets/'website-news.css').read_text()

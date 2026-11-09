@@ -2,8 +2,45 @@
 import re
 
 
+DISCLOSURE_PLACEHOLDER = '[bitte ergänzen]'
+DISCLOSURE_TEMPLATES = {
+    'rights_basis': f'Grundlage für die kommerzielle Nutzung der Texte, Daten und gegebenenfalls Bilder ist {DISCLOSURE_PLACEHOLDER}.',
+    'conflicts': f'Der Autor erklärt zu eigenen Positionen, Vergütungen und Geschäftsbeziehungen {DISCLOSURE_PLACEHOLDER}.',
+    'advertising_details': f'Der Beitrag wurde {DISCLOSURE_PLACEHOLDER} finanziert. Angaben zu Auftraggebern und Vergütung {DISCLOSURE_PLACEHOLDER}.',
+}
+
+
 def normalized(text):
     return re.sub(r'\W+', '', text.casefold())
+
+
+def editorial_issues(editorial, original_thesis, original_memo):
+    issues = []
+    for key, original, label in (
+        ('thesis', original_thesis, 'Deine Analyse & These'),
+        ('memo', original_memo, 'Memo für die Leser'),
+    ):
+        if normalized(editorial[key]) == normalized(original):
+            issues.append(f'„{label}“ redaktionell überarbeiten.')
+    for key, minimum, label in (
+        ('rights_basis', 30, 'Kommerzielle Nutzungsrechte'),
+        ('conflicts', 20, 'Interessenkonflikte'),
+        ('advertising_details', 20, 'Finanzierung dieses Beitrags'),
+    ):
+        value = editorial.get(key, '').strip()
+        if DISCLOSURE_PLACEHOLDER in value.casefold():
+            issues.append(f'„{label}“ prüfen und den Platzhalter durch die tatsächlichen Angaben ersetzen.')
+            continue
+        if key == 'rights_basis':
+            basis = re.sub(r'^Dokumentierte Grundlage für die kommerzielle Nutzung\s*', '', value, flags=re.IGNORECASE)
+            if not basis or re.fullmatch(r'(?:nein|kein(?:e|er|en|em|es)?|keine angaben|nicht bekannt|unklar|offen)[.!]?', basis.strip(), flags=re.IGNORECASE):
+                issues.append('„Kommerzielle Nutzungsrechte“ mit einer konkreten Lizenz, Freigabe oder eigenen Rechten dokumentieren.')
+                continue
+        if len(value) < minimum:
+            issues.append(f'„{label}“ konkret dokumentieren (mindestens {minimum} Zeichen).')
+    if editorial.get('advertising') != 'none':
+        issues.append('Bezahlte Beiträge und Affiliate-Inhalte sind bis zur gesonderten Prüfung gesperrt.')
+    return issues
 
 
 def validate_review(editorial, original_thesis, original_memo, saved_editorial, confirmations):
@@ -11,11 +48,6 @@ def validate_review(editorial, original_thesis, original_memo, saved_editorial, 
         raise ValueError('Nachbearbeitung, Faktenprüfung und kommerzielle Nutzungsrechte müssen ausdrücklich bestätigt werden.')
     if saved_editorial != editorial:
         raise ValueError('Bitte genau diesen Entwurf erneut speichern, prüfen und freigeben.')
-    for key, original in (('thesis', original_thesis), ('memo', original_memo)):
-        if normalized(editorial[key]) == normalized(original):
-            raise ValueError('Analyse und Memo müssen beide redaktionell nachbearbeitet werden; unveränderte Ausgangstexte sind gesperrt.')
-    for key, minimum in (('rights_basis', 30), ('conflicts', 20), ('advertising_details', 20)):
-        if len(editorial.get(key, '').strip()) < minimum:
-            raise ValueError('Bitte Nutzungsrechte, Interessenkonflikte und Finanzierung konkret dokumentieren.')
-    if editorial.get('advertising') != 'none':
-        raise ValueError('Bezahlte Beiträge und Affiliate-Inhalte sind bis zur gesonderten Werbe- und Datenschutzprüfung gesperrt.')
+    issues = editorial_issues(editorial, original_thesis, original_memo)
+    if issues:
+        raise ValueError(' '.join(issues))

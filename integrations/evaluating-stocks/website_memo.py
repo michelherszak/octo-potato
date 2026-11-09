@@ -17,14 +17,15 @@ def text(value, maximum=3000):
     return str(value or '')[:maximum]
 
 
-def source_url(evidence):
+def source_url(evidence, *, secure_only=False):
+    schemes = {'https'} if secure_only else {'https', 'http'}
     for key in ('source_url', 'url'):
         url = evidence.get(key)
-        if isinstance(url, str) and len(url) <= 2000 and urlparse(url).scheme in {'https', 'http'} and urlparse(url).hostname:
+        if isinstance(url, str) and len(url) <= 2000 and urlparse(url).scheme in schemes and urlparse(url).hostname:
             return {'source_url': url}
     for item in evidence.values():
         if isinstance(item, dict):
-            found = source_url(item)
+            found = source_url(item, secure_only=secure_only)
             if found:
                 return found
     return {}
@@ -64,7 +65,7 @@ def build_memo_overview(run):
         ev = evidence.get(key) or {}
         money_metrics.append({'key': key, 'label': label, 'value': money(value, currency), 'explanation': explanation,
                               'period': text(ev.get('period_end') or 'Zeitraum siehe Quelle; Auswertung ' + created, 150),
-                              'source': text(ev.get('source') or 'Gespeicherte Auswertung; Detailherkunft nicht dokumentiert', 500), **source_url(ev)})
+                              'source': text(ev.get('source') or 'Gespeicherte Auswertung; Detailherkunft nicht dokumentiert', 500), **source_url(ev, secure_only=True)})
     # Use the stored annual breakdown, never derive costs from revenue minus cashflow.
     pl = run.get('pl_breakdown') or {}
     # Herkunft der Jahreskosten. Ohne Angabe bleibt es beim heutigen Datenweg (Yahoo):
