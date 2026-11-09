@@ -73,6 +73,17 @@
 .latest-panel .read-link{margin-top:14px}
 @media (max-width:900px){.index-layout{grid-template-columns:1fr;gap:28px}.index-rail{position:static}}
 
+/* Ausdrückliche Rückfrage nach dem Folgen und Kontoeinstellung. */
+.follow-mail-offer{display:grid;gap:7px;margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--soft);padding:11px 13px}
+.follow-mail-offer p{margin:0;font-size:13px;font-weight:600}
+.follow-mail-offer button{justify-self:start;border:0;border-radius:999px;background:var(--accent);color:#fff;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.follow-mail-offer button:disabled{opacity:.6;cursor:default}
+.follow-mail-offer small{font-size:11px;line-height:1.5;color:var(--muted)}
+.follow-mail-offer a,.account-mail a{color:var(--accent)}
+.follow-mail-active{margin:9px 0 0;font-size:12px;color:var(--muted)}
+.account-mail{display:grid;gap:10px;align-content:start}
+.account-mail .auth-check{font-size:13px;color:var(--ink)}
+.account-mail small{font-size:11px}
 /* Pflichthinweis unter jeder Veröffentlichung. */
 .disclaimer{margin:30px 0 0;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;background:var(--bg);padding:16px 18px}
 .disclaimer-title{margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}

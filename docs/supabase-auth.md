@@ -134,21 +134,30 @@ bleiben durch die serverseitige Token- und Rollenprüfung geschützt.
 
 ## Zusammenspiel mit den E-Mail-Updates
 
-TechThese betreibt zwei getrennte Systeme. Supabase Auth ist die Identität: Registrierung,
-Anmeldung, Passwort-Wiederherstellung, Profil, Datenexport und Kontolöschung unter `/login`
-und `/konto`. Die E-Mail-Updates aus `docs/email-accounts.md` bleiben unverändert und
-arbeiten weiter mit eigener Zugangslink-Anmeldung, eigener Sitzung und eigenen Tabellen
-(`subscribers`, `stock_subscriptions`, `account_sessions`, `email_login_tokens`); ihre
-Oberfläche liegt jetzt unter `/konto/updates`.
+Supabase Auth ist die einzige Anmeldung für neue Leserinnen und Leser. Es gibt eine
+Liste gefolgter Unternehmen: `company_follows`.
 
-Offene Punkte dieser Zusammenführung:
+Der E-Mail-Versand aus `docs/email-accounts.md` bleibt technisch unverändert und liest
+weiter `subscribers` und `stock_subscriptions`. Verbunden werden beide über die bestätigte
+E-Mail-Adresse (`lib/follow-updates.ts`):
 
-- **Zwei Anmeldungen.** Wer E-Mail-Updates verwalten möchte, meldet sich dort weiterhin
-  mit einem Zugangslink an, auch wenn er bereits über Supabase angemeldet ist. Eine
-  Verknüpfung über die E-Mail-Adresse ist noch nicht umgesetzt.
-- **Zwei Folgen-Begriffe.** `company_follows` speichert das Folgen im Konto (Supabase-Benutzer,
-  Schaltfläche auf der Unternehmensseite). `stock_subscriptions` steuert unverändert den
-  E-Mail-Versand (Abonnent, Auswahl unter `/konto/updates`). Beide werden nicht automatisch
-  synchronisiert: Folgen allein löst keine E-Mails aus.
+- **Einwilligung.** E-Mails gibt es nur nach einer ausdrücklichen Handlung: im Kontobereich
+  oder über die Rückfrage direkt nach dem Folgen. `PUT /api/account/notifications` legt dann
+  einen bestätigten Abonnenten für die Kontoadresse an, mit Zeitpunkt und Version
+  `konto-updates-2026-11-09`. Folgen allein verschickt nichts.
+- **Spiegel.** Nach jedem Folgen, Entfolgen und Einschalten wird `stock_subscriptions` aus
+  `company_follows` neu geschrieben. Ohne Einwilligung bleibt der Spiegel leer. Bereits
+  eingereihte Mails zu nicht mehr gefolgten Unternehmen werden verworfen.
+- **Übernahme.** Hatte dieselbe Adresse schon früher Updates ohne Konto bestellt, wandert
+  deren Auswahl beim Einschalten in `company_follows`. Es geht nichts verloren.
+- **Ausschalten** setzt die Einwilligung zurück; die gefolgten Unternehmen bleiben.
+- **Kontolöschung** entfernt den Abonnenten samt Auswahl, Sitzungen und Versandaufträgen.
+
+`/konto/updates` bleibt für bestehende Abonnenten ohne Konto erreichbar, verweist neue
+Besucher aber auf das Konto. Abbestellen über den Link in jeder E-Mail funktioniert
+unverändert.
+
+Weiterhin offen:
+
 - **Statistik-Ausschluss.** Der Ausschluss eigener Admin-Besuche prüft weiterhin die
   Plattform-Anmeldung über `app/chatgpt-auth.ts`, nicht die Supabase-Rolle.

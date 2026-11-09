@@ -4,7 +4,7 @@ import {allArticles,companyCatalog} from '@/lib/content';
 import {getPublicSupabaseConfig} from '@/lib/supabase-server';
 import {ArticleCard,Tags} from '../../components';
 import {breadcrumbLd,jsonLd,pageMetadata} from '@/lib/seo';
-import FollowButton from './FollowButton';
+import FollowButton from '../../FollowButton';
 export const dynamic='force-dynamic';
 export async function generateMetadata({params}:{params:Promise<{ticker:string}>}){
   const {ticker}=await params;

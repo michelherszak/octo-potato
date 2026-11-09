@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {accountAudit,listFollows,recordAuthEvent,syncAccountProfile} from '@/lib/supabase-accounts';
 import {authErrorResponse,AuthError,getSupabaseAdminClient,requireSameOrigin,requireVerifiedSupabaseUser} from '@/lib/supabase-server';
 import {companyCatalog} from '@/lib/content';
+import {deleteEmailUpdateStatements,emailUpdateStatus} from '@/lib/follow-updates';
 
 const profileSchema=z.object({
   displayName:z.string().trim().min(2).max(80).optional(),
@@ -22,9 +23,9 @@ async function authenticated(request:Request){
 export async function GET(request:Request){
   try{
     const {profile}=await authenticated(request);
-    const [audit,follows,catalog]=await Promise.all([accountAudit(env.DB!,profile.userId),listFollows(env.DB!,profile.userId),companyCatalog()]);
+    const [audit,follows,catalog,emailUpdates]=await Promise.all([accountAudit(env.DB!,profile.userId),listFollows(env.DB!,profile.userId),companyCatalog(),emailUpdateStatus(env.DB!,profile.email)]);
     const names=new Map(catalog.map(company=>[company.ticker,company.name] as const));
-    return Response.json({profile,audit,follows:follows.map(follow=>({...follow,name:names.get(follow.ticker)||follow.ticker}))},{headers:noStore});
+    return Response.json({profile,audit,emailUpdates,follows:follows.map(follow=>({...follow,name:names.get(follow.ticker)||follow.ticker}))},{headers:noStore});
   }catch(error){return authErrorResponse(error);}
 }
 
@@ -72,6 +73,8 @@ export async function DELETE(request:Request){
       env.DB!.prepare(`UPDATE user_profiles SET email=?,display_name='Gelöschtes Konto',avatar_path=NULL,status='deleted',updated_at=?,deleted_at=? WHERE user_id=?`)
         .bind(`deleted-${user.id}@deleted.invalid`,now,now,user.id),
       env.DB!.prepare('DELETE FROM company_follows WHERE user_id=?').bind(user.id),
+      // Sonst bekäme eine gelöschte Person weiter E-Mails.
+      ...deleteEmailUpdateStatements(env.DB!,profile.email),
       env.DB!.prepare('DELETE FROM auth_audit_log WHERE user_id=?').bind(user.id),
       env.DB!.prepare(`INSERT INTO auth_audit_log (user_id,event,detail,created_at) VALUES (NULL,'account_deleted','{}',?)`).bind(now),
     ]);
