@@ -22,6 +22,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Arbeitsordner von Conductor, u. a. Sicherungen fremder Projekte.
+    ".context/**",
   ]),
 ]);
 
