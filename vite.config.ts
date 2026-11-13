@@ -26,6 +26,8 @@ const localBindingConfig = {
         },
       ]
     : [],
+  // Serverseitige Nutzungsmessung; schreibt nur aggregierbare Merkmale, keine Personendaten.
+  analytics_engine_datasets: [{binding: "TRAFFIC", dataset: "techthese_traffic"}],
   r2_buckets: r2
     ? [
         {

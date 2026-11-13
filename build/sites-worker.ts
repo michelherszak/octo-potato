@@ -3,6 +3,7 @@ import {accountStorageConfig,emailDeliveryConfig} from '../lib/account-runtime';
 import {dispatchArticleEmails} from '../lib/notifications';
 import {cleanupAccounts} from '../lib/accounts';
 import {privateHeaders} from '../lib/account-http';
+import {toDataPoint,trafficEvent} from '../lib/traffic';
 
 export default {
   scheduled(_event: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
@@ -17,7 +18,15 @@ export default {
     const storage=accountPath?accountStorageConfig(env):null;
     if(request.method==='GET'&&storage&&target.origin!==storage.base)
       return Response.redirect(storage.base+target.pathname+target.search,302);
+    const started = Date.now();
     const response = await handler.fetch(request, env, ctx);
+    // Serverseitige Zählung ohne Cookie und ohne IP; ein Fehler hier darf die Antwort nie stören.
+    if (env.TRAFFIC) {
+      try {
+        const event = trafficEvent(request, response.status, Date.now() - started);
+        if (event) env.TRAFFIC.writeDataPoint(toDataPoint(event));
+      } catch { /* Messung ist nachrangig gegenüber der Auslieferung. */ }
+    }
     const path = target.pathname;
     if (path === '/konto' || path.startsWith('/konto/') || path.startsWith('/api/account/')) {
       const protectedResponse = new Response(response.body, response);
