@@ -1,6 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {z} from 'zod';
 import {getAnalyticsDashboard} from '@/lib/analytics';
+import {trafficReport} from '@/lib/traffic-query';
 import {listAccounts,recordAuthEvent,syncAccountProfile} from '@/lib/supabase-accounts';
 import {authErrorResponse,AuthError,requireSameOrigin,requireVerifiedSupabaseUser} from '@/lib/supabase-server';
 
@@ -22,8 +23,14 @@ async function requireAdmin(request:Request){
 export async function GET(request:Request){
   try{
     const {profile}=await requireAdmin(request);
-    const [analytics,users]=await Promise.all([getAnalyticsDashboard(env.DB!),listAccounts(env.DB!)]);
-    return Response.json({account:profile,analytics,users},{headers:{'cache-control':'no-store'}});
+    const days=Math.min(Math.max(Number(new URL(request.url).searchParams.get('days'))||7,1),30);
+    const [analytics,users,traffic]=await Promise.all([
+      getAnalyticsDashboard(env.DB!),listAccounts(env.DB!),
+      // Serverseitige Zählung; scheitert sie, bleibt der übrige Bericht nutzbar.
+      trafficReport({token:env.CLOUDFLARE_ANALYTICS_TOKEN,accountId:env.CLOUDFLARE_ACCOUNT_ID,days})
+        .catch(()=>null),
+    ]);
+    return Response.json({account:profile,analytics,users,traffic},{headers:{'cache-control':'no-store'}});
   }catch(error){return authErrorResponse(error);}
 }
 

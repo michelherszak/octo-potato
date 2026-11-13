@@ -14,6 +14,7 @@ declare namespace Cloudflare {
     SUPABASE_PUBLISHABLE_KEY?: string;
     SUPABASE_SERVICE_ROLE_KEY?: string;
     CLOUDFLARE_ANALYTICS_TOKEN?: string;
+    CLOUDFLARE_ACCOUNT_ID?: string;
     DB?: D1Database;
     TRAFFIC?: AnalyticsEngineDataset;
     BUCKET?: R2Bucket;

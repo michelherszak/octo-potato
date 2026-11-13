@@ -3,11 +3,13 @@
 import {useEffect,useState} from 'react';
 import type {AccountProfile,AccountRole,AccountStatus} from '@/lib/supabase-accounts';
 import type {AnalyticsDashboard} from '@/lib/analytics';
+import type {TrafficReport as TrafficData} from '@/lib/traffic-query';
+import TrafficReport from './TrafficReport';
 import VisitorFlow from './VisitorFlow';
 import {getSupabaseBrowserClient,type PublicSupabaseConfig} from '@/lib/supabase-browser';
 import AnalyticsExclusion from '@/app/AnalyticsExclusion';
 
-type DashboardData={account:AccountProfile;analytics:AnalyticsDashboard;users:AccountProfile[]};
+type DashboardData={account:AccountProfile;analytics:AnalyticsDashboard;users:AccountProfile[];traffic:TrafficData|null};
 const dateTime=new Intl.DateTimeFormat('de-DE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Berlin'});
 
 export default function AdminDashboard({config}:{config:PublicSupabaseConfig}){
@@ -23,6 +25,7 @@ export default function AdminDashboard({config}:{config:PublicSupabaseConfig}){
     <section className="admin-stat-grid" aria-label="Besucherstatistik"><article><span>Heute aktiv</span><strong>{a.visitorsToday}</strong><small>Unique Visitors</small></article><article><span>Letzte 7 Tage</span><strong>{a.visitors7Days}</strong><small>Unique Visitors</small></article><article><span>Letzte 30 Tage</span><strong>{a.visitors30Days}</strong><small>Unique Visitors</small></article><article><span>Konten</span><strong>{data.users.length}</strong><small>Bestätigte Benutzer</small></article></section>
     <AnalyticsExclusion/>
     <section className="admin-users"><div className="section-title"><h2>Benutzerkonten</h2><span>{data.users.length} aktive oder gesperrte Konten</span></div><div className="admin-user-table"><div className="admin-user-row admin-page-head"><span>Konto</span><span>Rolle</span><span>Status</span><span>Letzte Anmeldung</span></div>{data.users.map(user=><div className="admin-user-row" key={user.userId}><span><strong>{user.displayName}</strong><small>{user.email}</small></span><select aria-label={'Rolle von '+user.email} value={user.role} disabled={busyUser===user.userId||user.userId===data.account.userId} onChange={event=>updateUser(user.userId,event.target.value as AccountRole,user.status)}><option value="user">User</option><option value="buyer">Buyer</option><option value="super_admin">Super Admin</option></select><select aria-label={'Status von '+user.email} value={user.status} disabled={busyUser===user.userId||user.userId===data.account.userId} onChange={event=>updateUser(user.userId,user.role,event.target.value as AccountStatus)}><option value="active">Aktiv</option><option value="suspended">Gesperrt</option></select><time>{dateTime.format(new Date(user.lastLoginAt))}</time></div>)}</div></section>
+    <section className="admin-traffic" aria-labelledby="traffic-title"><div className="section-title"><h2 id="traffic-title">Nutzung der Seite</h2><span>Serverseitig gezählt, alle Besuche</span></div><TrafficReport traffic={data.traffic}/></section>
     <section className="admin-visitors" aria-labelledby="visitor-title"><div className="section-title"><h2 id="visitor-title">Besucher und Seitenverlauf</h2><span>Einstieg und Absprung über alle Besuche</span></div><VisitorFlow funnel={a.funnel}/></section>
   </>;
 }
